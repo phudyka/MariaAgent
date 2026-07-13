@@ -1,0 +1,14 @@
+code;nom;contact;email;telephone;ville;type
+CDURAN01;Durand Jean-Marc;Jean-Marc Durand;jm.durand@orange.fr;06 12 45 78 90;Nice;particulier
+CMARTI01;Camping Les Martinets;Sophie Berthier;s.berthier@lesmartinets.fr;04 93 55 12 40;Antibes;professionnel
+CHOTEL01;Hôtel Bellevue Riviera;Marc Fontana;direction@bellevue-riviera.com;04 93 88 27 61;Menton;professionnel
+CLEROY01;Leroy Catherine;Catherine Leroy;cathleroy06@gmail.com;06 74 21 33 08;Cagnes-sur-Mer;particulier
+CMAIRI01;Mairie de Vence — Services techniques;Paul Giordano;p.giordano@vence.fr;04 93 58 40 22;Vence;collectivite
+CPISCI01;Aqua Bleu Services;Karim Haddad;contact@aquableu-services.fr;04 92 09 15 73;Saint-Laurent-du-Var;professionnel
+CROSSI01;Rossi Antoine;Antoine Rossi;antoine.rossi@free.fr;06 61 08 44 27;Mougins;particulier
+CRESID01;Résidence Les Palmiers (syndic);Isabelle Meunier;syndic@lespalmiers06.fr;04 93 20 71 15;Villeneuve-Loubet;professionnel
+CBLANC01;Blanc Sylvie;Sylvie Blanc;sylvie.blanc06@laposte.net;06 88 90 12 35;Grasse;particulier
+CGYMCL01;Gym Club Azur;Thomas Ricci;t.ricci@gymclubazur.fr;04 93 42 60 18;Biot;professionnel
+CPETIT01;Petit Frédéric;Frédéric Petit;fred.petit@wanadoo.fr;06 45 32 19 76;Valbonne;particulier
+CCAMPE01;Domaine du Grand Pin (camping);Nathalie Weber;accueil@domainegrandpin.fr;04 93 77 30 52;Cannes;professionnel
+CNAVAR01;Navarro Élodie;Élodie Navarro;elodie.navarro@gmail.com;06 29 84 51 03;Nice;particulier

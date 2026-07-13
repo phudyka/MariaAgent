@@ -1,0 +1,23 @@
+numero;client_code;type;objet;date_emission;date_validite;statut;notes
+DE00092;CDURAN01;devis;Remplacement pompe de filtration piscine 9x4;2025-08-14;2025-09-13;ACCEPTED;
+DE00095;CMARTI01;devis;Rénovation filtration bloc technique bassin principal;2025-09-02;2025-10-02;ACCEPTED;
+DE00097;CLEROY01;devis;Électrolyseur au sel + régulation pH;2025-09-18;2025-10-18;REJECTED;A trouvé moins cher en ligne
+DE00099;CHOTEL01;devis;Hivernage bassin + bâche à bulles 10x5;2025-10-06;2025-11-05;ACCEPTED;
+DE00101;CROSSI01;devis;Remplacement sable filtre D500 + vanne 6 voies;2025-10-21;2025-11-20;ACCEPTED;
+DE00103;CMAIRI01;devis;Étude renouvellement filtration bassin municipal;2025-11-12;2026-01-11;EXPIRED;Budget reporté au prochain exercice
+DE00105;CBLANC01;devis;Projecteur LED + coffret électrique filtration;2025-12-09;2026-01-08;EXPIRED;
+DE00106;CPISCI01;devis;Lot skimmers + buses chantier neuf (revente pro);2026-01-15;2026-02-14;ACCEPTED;Remise pro appliquée en marge
+DE00108;CRESID01;devis;Remise en état filtration piscine copropriété;2026-02-10;2026-03-12;REJECTED;Vote AG défavorable
+DE00110;CPETIT01;devis;Robot électrique + bâche à bulles 8x4;2026-03-05;2026-04-04;ACCEPTED;
+DE00111;CDURAN01;devis;Passage au verre filtrant + vanne 6 voies;2026-03-24;2026-04-23;EXPIRED;Client parti en déplacement longue durée
+DE00113;CGYMCL01;devis;Régulation pH + électrolyseur bassin intérieur;2026-04-08;2026-06-07;REJECTED;Prestataire habituel retenu
+DE00114;CCAMPE01;devis;Équipement complet filtration piscine mobil-home;2026-04-16;2026-06-15;ACCEPTED;
+DE00115;CHOTEL01;devis;Remplacement robot + projecteurs terrasse bassin;2026-05-28;2026-07-27;SENT;Demande un délai de réflexion jusqu'à fin juin
+DE00117;CLEROY01;devis;Rénovation local technique : pompe + filtre D400;2026-06-03;2026-08-02;SENT;
+DE00118;CMARTI01;devis;Extension filtration pataugeoire + skimmers;2026-06-20;2026-08-19;SENT;Relance téléphonique du 05/07 restée sans réponse
+DE00120;CROSSI01;devis;Bâche à bulles 500 microns 10x4,5;2026-06-26;2026-08-25;SENT;
+DE00121;CMAIRI01;devis;Remplacement vannes + tubes réseau hydraulique;2026-06-05;2026-09-03;SENT;Passage en commission prévu le 15/09
+DE00122;CBLANC01;devis;Électrolyseur eXO iQ 18 piscine 8x4;2026-07-01;2026-07-31;SENT;
+DE00123;CPISCI01;devis;Lot tubes PVC pression chantier Villeneuve;2026-07-06;2026-08-05;SENT;
+DE00124;CRESID01;devis;Coffret filtration + horloge + transfo;2026-07-08;2026-08-07;DRAFT;
+DE00125;CDURAN01;devis;Entretien estival : sable + buses;2026-07-10;2026-08-09;DRAFT;

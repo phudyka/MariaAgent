@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ETS Maria — Assistant commercial</title>
+<style>
+  /* Design system Peep v3 — adaptation assistant mails (voir DESIGN_SYSTEM.md) */
+  @font-face {
+    font-family: "DM Sans";
+    src: url("/static/fonts/dmsans-var-latin.woff2") format("woff2");
+    font-weight: 100 1000; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: "JetBrains Mono";
+    src: url("/static/fonts/jetbrainsmono-var-latin.woff2") format("woff2");
+    font-weight: 100 800; font-style: normal; font-display: swap;
+  }
+  :root {
+    --bg-base:#070B12; --bg-surface:#0C131F; --bg-elevated:#131D2C;
+    --bg-overlay:#1C2A3B; --bg-subtle:#24344A;
+    --line-subtle:#16202E; --line-base:#1F2D3F; --line-strong:#2B3C52;
+    --fg:#ECF1F7; --fg-2:#9DB0C4; --fg-3:#647A91; --fg-4:#3B4859; --fg-inverse:#06140E;
+    --blue-300:#63B6EA; --blue-400:#2F9DDF; --blue-500:#1B86CF; --blue-950:#0A2236;
+    --aqua-300:#4FD0DE; --aqua-400:#25B8CB; --aqua-500:#14A5B8; --aqua-950:#06262C;
+    --green-300:#5AD895; --green-400:#2FC773; --green-500:#18B55F; --green-600:#139A50; --green-700:#0F7E41; --green-950:#062B19;
+    --lime-500:#A2CC14;
+    --amber-300:#FCD34D; --amber-400:#FBBF24; --amber-500:#F59E0B; --amber-950:#3A1E04;
+    --red-300:#FCA5A5; --red-400:#F87171; --red-500:#EF4444; --red-950:#3A0A0A;
+    --gradient-brand: linear-gradient(115deg, #1B86CF 0%, #14A5B8 48%, #18B55F 100%);
+    --gradient-brand-wash: linear-gradient(115deg, rgba(27,134,207,.14) 0%, rgba(20,165,184,.12) 50%, rgba(24,181,95,.14) 100%);
+    --shadow-e1: 0 1px 2px rgba(0,0,0,.40), 0 1px 3px rgba(0,0,0,.30);
+    --hairline: inset 0 1px 0 rgba(255,255,255,.045);
+    --glow-primary: 0 0 0 1px rgba(24,181,95,.30), 0 10px 30px -8px rgba(24,181,95,.40);
+    --focus-ring: 0 0 0 3px rgba(20,165,184,.32);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg-base); color: var(--fg);
+    font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px; line-height: 1.6;
+  }
+  ::selection { background: rgba(20,165,184,.35); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg-subtle); border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--line-strong); }
+
+  /* ── TopBar ─────────────────────────────────────────────── */
+  header {
+    position: relative; background: var(--bg-surface);
+    border-bottom: 1px solid var(--line-base);
+    padding: 16px 24px; display: flex; align-items: center; gap: 16px;
+  }
+  header::before { /* barre signature — dégradé eau */
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
+    background: var(--gradient-brand);
+  }
+  .brand h1 { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -.01em; }
+  .brand svg.curve { display: block; width: 130px; height: 7px; margin-top: 3px; }
+  .badge {
+    font-size: 12px; font-weight: 500; padding: 3px 11px; border-radius: 999px;
+    color: var(--aqua-300); background: rgba(20,165,184,.10);
+    border: 1px solid rgba(20,165,184,.30);
+  }
+  #status {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 999px;
+    border: 1px solid var(--line-base); background: var(--bg-elevated);
+    color: var(--fg-2); transition: color .18s, border-color .18s;
+  }
+  #dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber-400); flex-shrink: 0; }
+  #status.ok    { color: var(--green-300); border-color: rgba(24,181,95,.25); background: rgba(6,43,25,.5); }
+  #status.ok #dot { background: var(--green-400); }
+  #status.warn  { color: var(--amber-300); border-color: rgba(245,158,11,.25); background: rgba(58,30,4,.5); }
+  #status.warn #dot { background: var(--amber-400); }
+  #status.err   { color: var(--red-300); border-color: rgba(239,68,68,.25); background: rgba(58,10,10,.5); }
+  #status.err #dot { background: var(--red-400); }
+
+  /* ── Layout ─────────────────────────────────────────────── */
+  main {
+    display: grid; grid-template-columns: 420px 1fr; gap: 24px;
+    max-width: 1240px; margin: 24px auto; padding: 0 24px;
+    align-items: start;
+  }
+  @media (max-width: 940px) { main { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--bg-surface); border: 1px solid var(--line-base);
+    border-radius: 14px; padding: 20px;
+    box-shadow: var(--shadow-e1), var(--hairline);
+  }
+  .microlabel {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--fg-3); margin: 0 0 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .opt {
+    font-size: 9px; font-weight: 600; letter-spacing: .08em;
+    color: var(--aqua-300); border: 1px solid rgba(20,165,184,.30);
+    border-radius: 999px; padding: 0 7px;
+  }
+  .step { margin-bottom: 18px; }
+
+  /* ── Tâches ─────────────────────────────────────────────── */
+  .tasks { display: flex; flex-direction: column; gap: 8px; }
+  .task {
+    position: relative; border: 1px solid var(--line-base); border-radius: 10px;
+    padding: 10px 14px; cursor: pointer; display: flex; gap: 10px; align-items: center;
+    color: var(--fg-2); font-size: 14px;
+    transition: background .12s var(--ease-out), border-color .12s, color .12s;
+  }
+  .task:hover { background: var(--bg-overlay); color: var(--fg); }
+  .task input { position: absolute; opacity: 0; pointer-events: none; }
+  .task b { font-weight: 500; }
+  .task.sel {
+    color: var(--green-300); font-weight: 500;
+    background: rgba(24,181,95,.10); border-color: rgba(24,181,95,.20);
+  }
+  .task.sel::before {
+    content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px;
+    border-radius: 999px; background: linear-gradient(180deg, var(--aqua-400), var(--green-500));
+  }
+  .task .ico { flex-shrink: 0; color: var(--fg-3); display: inline-flex; }
+  .task.sel .ico { color: var(--green-400); }
+
+  /* ── Recherche client (§7.14) ───────────────────────────── */
+  .searchbar {
+    display: flex; align-items: center; gap: 8px; height: 36px;
+    border-radius: 10px; background: rgba(7,11,18,.6);
+    border: 1px solid var(--line-base); padding: 0 12px;
+    transition: border-color .12s, box-shadow .12s;
+  }
+  .searchbar:focus-within { border-color: var(--aqua-500); box-shadow: var(--focus-ring); }
+  .searchbar svg { color: var(--fg-3); flex-shrink: 0; }
+  .searchbar input {
+    flex: 1; background: transparent; border: 0; color: var(--fg);
+    font: inherit; font-size: 14px; outline: none; min-width: 0;
+  }
+  .searchbar input::placeholder { color: var(--fg-3); }
+
+  /* ── Listes de sélection ────────────────────────────────── */
+  .pick-list {
+    margin-top: 8px; display: flex; flex-direction: column; gap: 6px;
+    max-height: 264px; overflow-y: auto; padding-right: 2px;
+  }
+  .pick-row {
+    height: auto; flex-direction: column; align-items: stretch; gap: 4px;
+    padding: 9px 12px; font-weight: 400; text-align: left;
+    background: transparent; border: 1px solid var(--line-base); border-radius: 10px;
+    color: var(--fg-2);
+  }
+  .pick-row:hover:not(:disabled) { background: var(--bg-overlay); border-color: var(--line-strong); }
+  .pick-row.sel {
+    background: rgba(24,181,95,.08); border-color: rgba(24,181,95,.25);
+  }
+  .pick-row .r1, .pick-row .r2 { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .pick-row .code { font-family: var(--mono); font-size: 11px; color: var(--aqua-300); flex-shrink: 0; }
+  .pick-row .nom {
+    font-size: 13.5px; font-weight: 500; color: var(--fg); flex: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pick-row .meta { font-size: 12px; color: var(--fg-3); }
+  .pick-row .r2 { justify-content: space-between; }
+  .pick-row .amt { font-family: var(--mono); font-size: 12.5px; color: var(--fg); }
+
+  /* Chip de statut devis (§7.6 ; EXPIRED neutre, l'ambre reste au brouillon) */
+  .st {
+    display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+    border-radius: 999px; padding: 0 8px; font-size: 10px; font-weight: 600;
+    letter-spacing: .04em; border: 1px solid; line-height: 1.7;
+  }
+  .st::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .st-DRAFT    { color: var(--amber-300); background: rgba(58,30,4,.5);  border-color: rgba(245,158,11,.25); }
+  .st-SENT     { color: var(--blue-300);  background: rgba(10,34,54,.5); border-color: rgba(27,134,207,.25); }
+  .st-ACCEPTED { color: var(--green-300); background: rgba(6,43,25,.5);  border-color: rgba(24,181,95,.25); }
+  .st-REJECTED { color: var(--red-300);   background: rgba(58,10,10,.5); border-color: rgba(239,68,68,.25); }
+  .st-EXPIRED  { color: var(--fg-3);      background: var(--bg-elevated); border-color: var(--line-base); }
+
+  /* Lignes du devis sélectionné */
+  .lignes {
+    border-top: 1px dashed var(--line-subtle); margin-top: 6px; padding-top: 7px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .ligne { display: flex; align-items: baseline; gap: 8px; font-size: 11.5px; min-width: 0; }
+  .ligne .ref { font-family: var(--mono); color: var(--aqua-300); flex-shrink: 0; }
+  .ligne .des { color: var(--fg-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ligne .q   { font-family: var(--mono); color: var(--fg-3); flex-shrink: 0; }
+
+  /* Sélection compacte (client choisi) */
+  .selected-row {
+    position: relative; display: flex; align-items: center; gap: 10px;
+    border: 1px solid rgba(24,181,95,.25); background: rgba(24,181,95,.08);
+    border-radius: 10px; padding: 8px 12px 8px 14px;
+  }
+  .selected-row::before {
+    content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px;
+    border-radius: 999px; background: linear-gradient(180deg, var(--aqua-400), var(--green-500));
+  }
+  .selected-row .check { color: var(--green-400); display: inline-flex; flex-shrink: 0; }
+  .selected-row .who { flex: 1; min-width: 0; }
+  .selected-row .who .nom {
+    font-size: 13.5px; font-weight: 500; color: var(--fg); display: block;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .selected-row .who .meta { font-size: 11.5px; color: var(--fg-3); }
+  .selected-row .who .meta .code { font-family: var(--mono); color: var(--aqua-300); }
+
+  /* Segmented (période) */
+  .segmented {
+    display: inline-flex; padding: 2px; gap: 2px; border-radius: 10px;
+    background: var(--bg-base); border: 1px solid var(--line-base); margin-bottom: 8px;
+  }
+  .segmented button {
+    height: 26px; padding: 0 10px; border-radius: 8px; font-size: 12px;
+    color: var(--fg-2); background: transparent;
+  }
+  .segmented button:hover:not(.on) { color: var(--fg); }
+  .segmented button.on { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--hairline); }
+
+  .mini-empty {
+    padding: 14px 12px; border: 1px dashed var(--line-base); border-radius: 10px;
+    color: var(--fg-3); font-size: 12.5px; text-align: center; margin-top: 8px;
+  }
+
+  /* ── Carte récap — contexte transmis à l'agent (signature) ── */
+  .recap {
+    margin-bottom: 18px; border: 1px solid var(--line-base); border-radius: 12px;
+    padding: 12px 14px; background: var(--gradient-brand-wash), var(--bg-surface);
+  }
+  .recap .microlabel { color: var(--aqua-300); margin-bottom: 7px; }
+  .recap .row { display: flex; gap: 8px; font-size: 12.5px; margin-top: 2px; min-width: 0; }
+  .recap .k { color: var(--fg-3); width: 48px; flex-shrink: 0; }
+  .recap .v { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .recap .v .m { font-family: var(--mono); font-size: 12px; color: var(--aqua-300); }
+  .recap .refs { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+  .recap .none { color: var(--fg-3); font-style: normal; }
+
+  /* ── Champs ─────────────────────────────────────────────── */
+  textarea, #refine {
+    width: 100%; padding: 11px 13px; border-radius: 10px;
+    background: rgba(7,11,18,.6); border: 1px solid var(--line-base);
+    color: var(--fg); font: inherit; font-size: 14px;
+    transition: border-color .12s, box-shadow .12s;
+  }
+  textarea { min-height: 130px; resize: vertical; }
+  textarea::placeholder, #refine::placeholder { color: var(--fg-3); }
+  textarea:focus, #refine:focus {
+    outline: none; border-color: var(--aqua-500); box-shadow: var(--focus-ring);
+  }
+
+  /* ── Boutons ────────────────────────────────────────────── */
+  button {
+    font: inherit; font-size: 14px; font-weight: 500; border: 0; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 10px; height: 36px; padding: 0 16px;
+    transition: background .12s var(--ease-out), box-shadow .12s, color .12s, border-color .12s;
+  }
+  button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+  .primary {
+    width: 100%; height: 44px; margin-top: 2px; font-weight: 600; font-size: 15px;
+    background: var(--green-500); color: var(--fg-inverse); box-shadow: var(--hairline);
+  }
+  .primary:hover:not(:disabled) { background: var(--green-600); box-shadow: var(--glow-primary); }
+  .primary:active:not(:disabled) { background: var(--green-700); }
+  .ghost {
+    height: 32px; padding: 0 13px; font-size: 13px;
+    background: transparent; color: var(--fg-2); border: 1px solid var(--line-base);
+  }
+  .ghost:hover:not(:disabled) { background: var(--bg-elevated); color: var(--fg); border-color: var(--line-strong); }
+  .ghost.xs { height: 26px; padding: 0 10px; font-size: 12px; flex-shrink: 0; }
+  .aqua {
+    height: 36px; font-size: 13px; color: var(--aqua-300);
+    background: rgba(20,165,184,.12); border: 1px solid rgba(20,165,184,.30);
+  }
+  .aqua:hover:not(:disabled) { background: rgba(20,165,184,.18); }
+  .hint { font-size: 12px; color: var(--fg-3); margin: 10px 0 0; }
+  .hint kbd {
+    font-family: var(--mono); font-size: 10.5px; color: var(--fg-3);
+    padding: 1px 6px; border-radius: 5px;
+    background: var(--bg-elevated); border: 1px solid var(--line-base);
+  }
+
+  /* ── Panneau brouillon ──────────────────────────────────── */
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar .microlabel { margin: 0; }
+  .toolbar .spacer { flex: 1; }
+  #refs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11.5px; padding: 2px 10px; border-radius: 999px;
+    color: var(--aqua-300); background: rgba(6,38,44,.6); border: 1px solid rgba(20,165,184,.25);
+  }
+  .chip::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--aqua-400); }
+  .chip.sm { font-size: 10.5px; padding: 1px 8px; }
+  #out {
+    white-space: pre-wrap; min-height: 300px; padding: 2px;
+    font-size: 14.5px; color: var(--fg); overflow-wrap: anywhere;
+  }
+  #out .todo {
+    color: var(--amber-300); background: rgba(58,30,4,.55);
+    border: 1px solid rgba(245,158,11,.30); border-radius: 6px; padding: 0 5px;
+  }
+  .empty-state { text-align: center; padding: 48px 16px; }
+  .empty-state .frame {
+    width: 60px; height: 60px; margin: 0 auto 16px; border-radius: 16px;
+    background: var(--bg-elevated); border: 1px solid var(--line-base);
+    box-shadow: var(--hairline); display: grid; place-items: center; color: var(--fg-3);
+  }
+  .empty-state h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: var(--fg); }
+  .empty-state p { margin: 0 auto; font-size: 13px; color: var(--fg-3); max-width: 340px; }
+  .cursor {
+    display: inline-block; width: 8px; height: 17px; background: var(--aqua-400);
+    vertical-align: text-bottom; border-radius: 2px; animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  #refine-row { display: none; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line-subtle); }
+  #refine { flex: 1; height: 36px; padding: 0 13px; }
+  .error {
+    display: none; margin-bottom: 12px; padding: 10px 14px; border-radius: 10px;
+    font-size: 13.5px; color: var(--red-300);
+    background: rgba(58,10,10,.5); border: 1px solid rgba(239,68,68,.30);
+  }
+  footer {
+    text-align: center; color: var(--fg-4); font-size: 12px; padding: 20px 0 28px;
+  }
+  footer .m { font-family: var(--mono); font-size: 11px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition-duration: .01ms !important; }
+    .cursor { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>ETS Maria — Assistant commercial</h1>
+    <svg class="curve" viewBox="0 0 320 12" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M2 9 C 90 1, 230 1, 318 6" fill="none" stroke="url(#peepCurve)" stroke-width="2.5" stroke-linecap="round"/>
+      <defs>
+        <linearGradient id="peepCurve" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#1B86CF"/><stop offset="0.5" stop-color="#14A5B8"/><stop offset="1" stop-color="#A2CC14"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  <span class="badge">100&nbsp;% local · aucune donnée ne sort</span>
+  <span id="status"><span id="dot"></span><span id="status-text">Vérification…</span></span>
+</header>
+
+<main>
+  <section class="card">
+    <div class="step">
+      <p class="microlabel">1 · Que voulez-vous rédiger ?</p>
+      <div class="tasks" id="tasks"></div>
+    </div>
+
+    <div class="step" id="step-client" hidden>
+      <p class="microlabel">2 · Client</p>
+      <div id="client-picker">
+        <div class="searchbar">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="client-q" placeholder="Rechercher un client (nom, code, ville)…" autocomplete="off">
+        </div>
+        <div class="pick-list" id="client-list"></div>
+      </div>
+      <div class="selected-row" id="client-selected" hidden></div>
+    </div>
+
+    <div class="step" id="step-doc" hidden>
+      <p class="microlabel" id="doc-label">3 · Devis</p>
+      <div class="segmented" id="periode" role="group" aria-label="Filtrer par période">
+        <button type="button" data-p="3m">3 mois</button>
+        <button type="button" data-p="6m">6 mois</button>
+        <button type="button" data-p="12m">12 mois</button>
+        <button type="button" data-p="" class="on">Tous</button>
+      </div>
+      <div class="pick-list" id="doc-list"></div>
+      <button type="button" class="ghost xs" id="no-doc" hidden style="margin-top:8px">Aucun devis concerné</button>
+    </div>
+
+    <div class="step" id="msg-block">
+      <p class="microlabel" id="msg-label">2 · Votre demande</p>
+      <textarea id="input" placeholder="Chargement…"></textarea>
+    </div>
+
+    <div class="recap" id="recap" hidden></div>
+
+    <button class="primary" id="go">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l16-4-4 16-5-6z"/><path d="M11 13l9-10"/></svg>
+      Générer le brouillon
+    </button>
+    <p class="hint">Astuce : <kbd>Ctrl</kbd> + <kbd>Entrée</kbd> pour générer.</p>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <p class="microlabel">Brouillon proposé</p>
+      <span class="spacer"></span>
+      <button class="ghost" id="copy" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
+        Copier
+      </button>
+      <button class="ghost" id="reset" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Nouveau
+      </button>
+    </div>
+    <div class="error" id="error"></div>
+    <div id="refs"></div>
+    <div id="out">
+      <div class="empty-state" id="empty">
+        <div class="frame">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>
+        </div>
+        <h3>Aucun brouillon</h3>
+        <p>Le brouillon s'affichera ici. Relisez et ajustez toujours avant envoi — l'assistant propose, l'humain décide.</p>
+      </div>
+    </div>
+    <div id="refine-row">
+      <input id="refine" placeholder="Affiner : « plus court », « ton plus ferme », « ajoute un créneau mardi »…">
+      <button class="aqua" id="refine-go">Affiner</button>
+    </div>
+  </section>
+</main>
+
+<footer id="foot">Agent local ETS Maria</footer>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+let TASKS = {}, currentTask = "reponse_client", history = [], busy = false;
+let selClient = null, selDoc = null, docs = [], periode = "", searchTimer = null;
+
+/* Besoins de chaque tâche : pilote l'affichage de la cascade et la validation. */
+const NEED = {
+  reponse_client: { client: true, doc: "optional", msg: true,
+                    msgLabel: "4 · Message reçu du client" },
+  relance_devis:  { client: true, doc: "required", msg: false },
+  mail_libre:     { client: false, doc: false, msg: true, msgLabel: "2 · Votre demande" },
+};
+const ST_LABELS = { DRAFT: "BROUILLON", SENT: "ENVOYÉ", ACCEPTED: "ACCEPTÉ",
+                    REJECTED: "REFUSÉ", EXPIRED: "EXPIRÉ" };
+const TYPE_LABELS = { particulier: "particulier", professionnel: "professionnel",
+                      collectivite: "collectivité" };
+
+const TASK_ICONS = {
+  reponse_client: '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.4 7.5L3 21l1.5-5.6A8.5 8.5 0 1 1 21 12z"/></svg>',
+  relance_devis: '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  mail_libre: '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5l4 4L8 20l-5 1 1-5z"/></svg>',
+};
+const CHECK_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5L19.5 7"/></svg>';
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g,
+  c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const dateFR = iso => iso.split("-").reverse().join("/");
+const eur = m => m.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " € HT";
+const qty = q => Number.isInteger(q) ? q : String(q).replace(".", ",");
+
+function cleanText(t) { return t.replaceAll("**", ""); }
+
+function renderOut(text, streaming) {
+  const out = $("out");
+  out.textContent = "";
+  const re = /\[À COMPLÉTER[^\]]*\]/g;
+  let last = 0, m;
+  while ((m = re.exec(text)) !== null) {
+    out.appendChild(document.createTextNode(text.slice(last, m.index)));
+    const s = document.createElement("span");
+    s.className = "todo"; s.textContent = m[0];
+    out.appendChild(s);
+    last = m.index + m[0].length;
+  }
+  out.appendChild(document.createTextNode(text.slice(last)));
+  if (streaming) out.insertAdjacentHTML("beforeend", '<span class="cursor"></span>');
+}
+
+/* ── Cascade de sélection ─────────────────────────────────── */
+
+function selectTask(id) {
+  currentTask = id;
+  document.querySelectorAll(".task").forEach(el =>
+    el.classList.toggle("sel", el.querySelector("input").value === id));
+  updateView();
+}
+
+function updateView() {
+  const need = NEED[currentTask];
+  $("step-client").hidden = !need.client;
+  $("client-picker").hidden = !!selClient;
+  $("client-selected").hidden = !selClient;
+  $("step-doc").hidden = !need.doc || !selClient;
+  $("doc-label").innerHTML = need.doc === "optional"
+    ? '3 · Devis <span class="opt">optionnel</span>' : "3 · Devis";
+  $("no-doc").hidden = need.doc !== "optional" || !selDoc;
+  $("msg-block").hidden = !need.msg;
+  if (need.msg) {
+    $("msg-label").textContent = need.msgLabel;
+    if (TASKS[currentTask]) $("input").placeholder = TASKS[currentTask].placeholder;
+  }
+  updateRecap();
+  updateGo();
+}
+
+function updateGo() {
+  const need = NEED[currentTask];
+  let ok = true;
+  if (need.client) ok = ok && !!selClient;
+  if (need.doc === "required") ok = ok && !!selDoc;
+  if (need.msg) ok = ok && $("input").value.trim().length > 0;
+  $("go").disabled = busy || !ok;
+}
+
+async function searchClients(q) {
+  try {
+    const res = await fetch("/api/clients?q=" + encodeURIComponent(q));
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    renderClientList(await res.json());
+  } catch (e) {
+    showError("Impossible de charger les clients : " + e.message);
+  }
+}
+
+function renderClientList(items) {
+  const box = $("client-list");
+  box.innerHTML = "";
+  if (!items.length) {
+    box.innerHTML = '<div class="mini-empty">Aucun client ne correspond à cette recherche.</div>';
+    return;
+  }
+  for (const c of items) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "pick-row";
+    b.innerHTML = `
+      <span class="r1"><span class="code">${esc(c.code)}</span><span class="nom">${esc(c.nom)}</span></span>
+      <span class="r2"><span class="meta">${esc(c.ville)} · ${esc(TYPE_LABELS[c.type] || c.type)}</span>
+      <span class="meta">${c.nb_documents} devis</span></span>`;
+    b.addEventListener("click", () => selectClient(c));
+    box.appendChild(b);
+  }
+}
+
+function selectClient(c) {
+  selClient = c; selDoc = null; docs = [];
+  const sel = $("client-selected");
+  sel.innerHTML = `
+    <span class="check">${CHECK_SVG}</span>
+    <span class="who"><span class="nom">${esc(c.nom)}</span>
+    <span class="meta"><span class="code">${esc(c.code)}</span> · ${esc(c.ville)}</span></span>`;
+  const change = document.createElement("button");
+  change.type = "button"; change.className = "ghost xs"; change.textContent = "Changer";
+  change.addEventListener("click", changeClient);
+  sel.appendChild(change);
+  updateView();
+  loadDocuments();
+}
+
+function changeClient() {
+  selClient = null; selDoc = null; docs = [];
+  updateView();
+  $("client-q").focus();
+}
+
+async function loadDocuments() {
+  if (!selClient) return;
+  try {
+    const res = await fetch(`/api/clients/${selClient.id}/documents?periode=${periode}`);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    docs = await res.json();
+    if (selDoc && !docs.some(d => d.id === selDoc.id)) selDoc = null;
+    renderDocuments();
+  } catch (e) {
+    showError("Impossible de charger les devis : " + e.message);
+  }
+}
+
+function renderDocuments() {
+  const box = $("doc-list");
+  box.innerHTML = "";
+  if (!docs.length) {
+    box.innerHTML = `<div class="mini-empty">Aucun devis pour ce client${periode ? " sur cette période" : ""}.</div>`;
+    updateRecap(); updateGo();
+    return;
+  }
+  for (const d of docs) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pick-row" + (selDoc && selDoc.id === d.id ? " sel" : "");
+    let html = `
+      <span class="r1"><span class="code">${esc(d.numero)}</span>
+      <span class="nom">${esc(d.objet)}</span>
+      <span class="st st-${esc(d.statut)}">${ST_LABELS[d.statut] || esc(d.statut)}</span></span>
+      <span class="r2"><span class="meta">émis le ${dateFR(d.date_emission)}</span>
+      <span class="amt">${eur(d.montant_ht)}</span></span>`;
+    if (selDoc && selDoc.id === d.id) {
+      html += '<span class="lignes">' + d.lignes.map(l => `
+        <span class="ligne"><span class="ref">${esc(l.sage_ref)}</span>
+        <span class="des">${esc(l.designation)}</span>
+        <span class="q">${qty(l.quantite)} × ${eur(l.prix_unitaire_ht)}</span></span>`).join("") + "</span>";
+    }
+    b.innerHTML = html;
+    b.addEventListener("click", () => {
+      selDoc = (selDoc && selDoc.id === d.id) ? null : d;  // re-clic = désélection
+      renderDocuments(); updateView();
+    });
+    box.appendChild(b);
+  }
+  updateRecap(); updateGo();
+}
+
+/* Carte récap : ce que l'agent recevra — le contexte est assemblé côté serveur
+   depuis la base, l'employé le vérifie d'un coup d'œil avant de générer. */
+function updateRecap() {
+  const need = NEED[currentTask];
+  const recap = $("recap");
+  if (!need.client || !selClient) { recap.hidden = true; return; }
+  recap.hidden = false;
+  let html = '<p class="microlabel">Contexte transmis à l\'agent</p>';
+  html += `<div class="row"><span class="k">Client</span>
+    <span class="v">${esc(selClient.nom)} <span class="m">${esc(selClient.code)}</span></span></div>`;
+  if (selDoc) {
+    html += `<div class="row"><span class="k">Devis</span>
+      <span class="v"><span class="m">${esc(selDoc.numero)}</span> · ${esc(selDoc.objet)} · ${eur(selDoc.montant_ht)}</span></div>`;
+    html += '<div class="refs">' + selDoc.lignes.map(l =>
+      `<span class="chip sm">${esc(l.sage_ref)}</span>`).join("") + "</div>";
+  } else {
+    html += `<div class="row"><span class="k">Devis</span>
+      <span class="v none">${need.doc === "required" ? "à sélectionner ci-dessus" : "aucun devis lié"}</span></div>`;
+  }
+  recap.innerHTML = html;
+}
+
+/* ── Config, santé, génération ────────────────────────────── */
+
+async function loadConfig() {
+  const cfg = await (await fetch("/api/config")).json();
+  TASKS = cfg.tasks;
+  $("foot").innerHTML = `Agent local ETS Maria · propulsé par Hermes Agent · modèle <span class="m">${cfg.model}</span> · catalogue : ${cfg.catalog_size} produits (mock Sage)`;
+  const box = $("tasks"); box.innerHTML = "";
+  for (const [id, t] of Object.entries(TASKS)) {
+    const label = document.createElement("label");
+    label.className = "task" + (id === currentTask ? " sel" : "");
+    label.innerHTML = `${TASK_ICONS[id] || ""}<input type="radio" name="task" value="${id}" ${id === currentTask ? "checked" : ""}><b>${t.label}</b>`;
+    label.querySelector("input").addEventListener("change", () => selectTask(id));
+    box.appendChild(label);
+  }
+  selectTask(currentTask);
+  searchClients("");
+}
+
+function setStatus(cls, text) {
+  $("status").className = cls; $("status-text").textContent = text;
+}
+
+async function checkHealth() {
+  try {
+    const h = await (await fetch("/api/health")).json();
+    if (h.ready) setStatus("ok", "Agent prêt");
+    else if (!h.ollama) setStatus("err", "Moteur IA arrêté");
+    else if (!h.hermes) setStatus("err", "Gateway Hermes arrêté");
+    else setStatus("warn", "Modèle non installé");
+  } catch { setStatus("err", "Serveur injoignable"); }
+}
+
+function setBusy(b) {
+  busy = b;
+  $("go").lastChild.textContent = b ? " Rédaction en cours…" : " Générer le brouillon";
+  $("refine-go").disabled = b;
+  updateGo();
+}
+
+function showError(msg) { const e = $("error"); e.textContent = msg; e.style.display = "block"; }
+
+async function generate(message, isRefine) {
+  const need = NEED[currentTask];
+  if (busy) return;
+  if (need.msg && !message.trim() && !isRefine) return;
+  setBusy(true);
+  $("error").style.display = "none";
+  if (!isRefine) { history = []; $("refs").innerHTML = ""; }
+  let text = "";
+  renderOut("", true);
+
+  try {
+    const body = { task: currentTask, message, history };
+    if (need.client && selClient) body.client_id = selClient.id;
+    if (need.doc && selDoc) body.document_id = selDoc.id;
+    const resp = await fetch("/api/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => null);
+      const detail = err && typeof err.detail === "string" ? err.detail : "HTTP " + resp.status;
+      throw new Error(detail);
+    }
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n\n"); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const ev = JSON.parse(line.slice(6));
+        if (ev.type === "meta" && ev.catalog_refs.length && !isRefine) {
+          $("refs").innerHTML = "";
+          for (const ref of ev.catalog_refs) {
+            const c = document.createElement("span");
+            c.className = "chip"; c.textContent = ref;
+            $("refs").appendChild(c);
+          }
+        } else if (ev.type === "delta") {
+          text += ev.text;
+          renderOut(cleanText(text), true);
+        } else if (ev.type === "done") {
+          text = cleanText(text);
+          renderOut(text, false);
+          history.push({ role: "user", content: message }, { role: "assistant", content: text });
+          $("copy").disabled = $("reset").disabled = false;
+          $("refine-row").style.display = "flex";
+          if (ev.stats && ev.stats.seconds)
+            setStatus("ok", `Agent prêt · ${String(ev.stats.seconds).replace(".", ",")} s`);
+        } else if (ev.type === "error") {
+          renderOut(text, false); showError(ev.message);
+        }
+      }
+    }
+  } catch (e) {
+    showError("Erreur de communication avec l'agent local : " + e.message);
+    renderOut(text, false);
+  } finally { setBusy(false); }
+}
+
+/* ── Événements ───────────────────────────────────────────── */
+
+$("client-q").addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => searchClients($("client-q").value), 200);
+});
+
+$("periode").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-p]");
+  if (!btn) return;
+  periode = btn.dataset.p;
+  document.querySelectorAll("#periode button").forEach(b => b.classList.toggle("on", b === btn));
+  loadDocuments();
+});
+
+$("no-doc").addEventListener("click", () => { selDoc = null; renderDocuments(); updateView(); });
+
+$("go").addEventListener("click", () => generate(NEED[currentTask].msg ? $("input").value : "", false));
+$("input").addEventListener("input", updateGo);
+$("input").addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "Enter" && !$("go").disabled) generate($("input").value, false);
+});
+$("refine-go").addEventListener("click", () => { generate($("refine").value, true); $("refine").value = ""; });
+$("refine").addEventListener("keydown", e => { if (e.key === "Enter") { generate($("refine").value, true); $("refine").value = ""; } });
+$("copy").addEventListener("click", async () => {
+  await navigator.clipboard.writeText($("out").textContent);
+  $("copy").lastChild.textContent = " Copié ✓"; setTimeout(() => $("copy").lastChild.textContent = " Copier", 1500);
+});
+const EMPTY_STATE_HTML = `
+  <div class="empty-state">
+    <div class="frame">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>
+    </div>
+    <h3>Aucun brouillon</h3>
+    <p>Le brouillon s'affichera ici. Relisez et ajustez toujours avant envoi — l'assistant propose, l'humain décide.</p>
+  </div>`;
+
+/* « Nouveau » vide le brouillon mais garde la sélection : on itère souvent
+   sur le même dossier client (réponse puis relance, plusieurs brouillons…). */
+$("reset").addEventListener("click", () => {
+  history = [];
+  $("out").innerHTML = EMPTY_STATE_HTML;
+  $("refs").innerHTML = ""; $("refine-row").style.display = "none";
+  $("copy").disabled = $("reset").disabled = true; $("input").value = "";
+  updateGo();
+});
+
+loadConfig(); checkHealth(); setInterval(checkHealth, 15000);
+</script>
+</body>
+</html>
