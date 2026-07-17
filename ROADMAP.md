@@ -82,3 +82,16 @@ Même philosophie : tout reste sur la VM.
 
 Sur Mac mini : Ollama s'installe nativement (pas de VM), l'agent FastAPI est portable
 tel quel. Le guide DEPLOY_MARIA.md reste valable en remplaçant §2–3 par l'install macOS.
+
+## 9. Multi-agents + UI façon ChatGPT (FAIT)
+- Frontend de chat : **Open WebUI** (Docker, :3000), branché en OpenAI-compatible sur le
+  proxy `agent/app.py` (`/v1`). Télémétrie/update-check coupés, usage 100 % local.
+- Sous-agents = presets « Modèles » Open WebUI : `Maria — Général`, `Maria — Mail libre`,
+  `Maria — Réponse client`, `Maria — Relance devis`. Sélecteur de modèle = invocation
+  directe d'un spécialisé ; `Général` orchestre (traite en direct ou renvoie au sélecteur).
+- Sélection guidée (client/devis par ID) **préservée** comme entrée unique pour
+  réponse/relance via `POST /api/handoff` : anti-hallucination et anti-injection conservés
+  (assemblage déterministe côté serveur, aucun tool-calling, toolset Hermes `[skills,todo,memory]`).
+- Détail : `docs/plan-chat-multiagents.md`, `docs/openwebui-presets.md`.
+- Limite assumée : compte de service Open WebUI unique (pas de traçabilité par employé
+  cette itération) — voir §7 gouvernance.

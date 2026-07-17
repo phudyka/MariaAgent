@@ -46,6 +46,10 @@ agent:
 # api_server = ce que voient les employés via l'UI : AUCUN terminal, AUCUN accès
 # fichier/web/navigateur. Un mail client copié-collé peut contenir des instructions
 # hostiles (prompt injection) — la surface d'outils doit rester minimale.
+# IMPORTANT (multi-agents) : ce toolset est reconduit tel quel derrière Open WebUI.
+# Le proxy agent/app.py n'expose AUCUN tool-calling au modèle : l'assemblage des
+# données (client/devis/catalogue) reste déterministe côté serveur, jamais laissé
+# au modèle. Ne jamais élargir api_server à [terminal, file, web].
 # cli = accès complet pour l'administrateur en local.
 platform_toolsets:
   cli: [hermes-cli]

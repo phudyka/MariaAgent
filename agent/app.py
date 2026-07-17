@@ -11,13 +11,14 @@ Seul ce proxy est exposé au LAN ; le gateway Hermes et Ollama restent en
 
 import json
 import os
+import re
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 import catalog
@@ -71,6 +72,28 @@ class ChatRequest(BaseModel):
     client_id: int | None = None
     document_id: int | None = None
     history: list[dict] = Field(default_factory=list, max_length=20)
+
+
+# ── Endpoint OpenAI-compatible (pour Open WebUI) ─────────────────────────────
+# Sous-agents = presets « Modèles » côté Open WebUI. Le proxy ne sert que deux
+# presets en direct (général + mail libre) : ils n'ont besoin d'aucun ID client/
+# devis. Réponse client / Relance devis passent exclusivement par /api/handoff
+# (sélecteur guidé) — jamais interprétés depuis du texte libre (anti-injection).
+OPENAI_MODELS = [
+    {"id": "maria-general", "name": "Maria — Général"},
+    {"id": "maria-libre", "name": "Maria — Mail libre"},
+    {"id": "maria-reponse", "name": "Maria — Réponse client (via sélecteur)"},
+    {"id": "maria-relance", "name": "Maria — Relance devis (via sélecteur)"},
+]
+# Presets traités en direct par ce proxy (les deux autres sont déclenchés par
+# /api/handoff depuis le sélecteur, pas par un appel OpenAI-compatible).
+DIRECT_MODELS = {"maria-general": "mail_libre", "maria-libre": "mail_libre"}
+
+
+class OpenAIChatRequest(BaseModel):
+    model: str
+    messages: list[dict] = Field(default_factory=list)
+    stream: bool = True
 
 
 def _load_chat_context(req: ChatRequest) -> tuple[dict | None, dict | None]:
@@ -211,6 +234,172 @@ async def chat(req: ChatRequest):
                 "message": "Impossible de joindre l'agent local (gateway Hermes). "
                            f"Vérifiez qu'il est démarré : scripts/run.sh — détail : {type(e).__name__}",
             })
+
+    return StreamingResponse(stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# ── Handoff du sélecteur guidé vers Open WebUI ──────────────────────────────
+# Point d'entrée unique où transitent client_id/document_id (jamais depuis du
+# texte libre). Réutilise les mêmes validations 422 que /api/chat.
+# Plan B (robuste, par défaut) : renvoie le récap assemblé + un lien Open WebUI
+#   prêt-à-coller ; l'employé colle une fois, aucune saisie d'ID.
+# Plan A (optionnel, fragilité connue) : si OPENWEBUI_BASE_URL + un JWT de
+#   service sont fournis, crée une conversation pré-remplie et renvoie son URL.
+class HandoffRequest(BaseModel):
+    task: str = Field(pattern="^(reponse_client|relance_devis|mail_libre)$")
+    message: str = Field(default="", max_length=8000)
+    client_id: int | None = None
+    document_id: int | None = None
+
+
+OPENWEBUI_BASE_URL = os.environ.get("MARIA_OPENWEBUI_URL", "http://127.0.0.1:3000")
+OPENWEBUI_JWT = os.environ.get("MARIA_OPENWEBUI_JWT", "")
+
+
+def _build_recap(req: HandoffRequest, client, document) -> str:
+    """Assemble le même contexte que /api/chat, renvoyé comme texte prêt-à-coller."""
+    if document:
+        refs = [ligne["sage_ref"] for ligne in document["lignes"]]
+        rows = catalog.by_refs(refs)
+    else:
+        rows = catalog.search(req.message)
+    catalog_lines = catalog.format_rows(rows)
+    messages = prompts.build_messages(req.task, req.message, [], catalog_lines,
+                                      client=client, document=document)
+    # build_messages préfixe tout au 1er message user : on le rend tel quel.
+    return messages[0]["content"] if messages else ""
+
+
+@app.post("/api/handoff")
+async def handoff(req: HandoffRequest):
+    client, document = _load_chat_context(req)  # valide (422 si besoin)
+    recap = _build_recap(req, client, document)
+    if OPENWEBUI_JWT:
+        # Plan A (best-effort) : tente de créer une conversation Open WebUI.
+        try:
+            chat_id = await _create_openwebui_chat(req.task, recap)
+            if chat_id:
+                return {"mode": "openwebui", "chat_url": f"{OPENWEBUI_BASE_URL}/?chat={chat_id}",
+                        "recap": recap}
+        except Exception:
+            pass  # retombe sur Plan B
+    return {"mode": "paste", "recap": recap, "openwebui_url": OPENWEBUI_BASE_URL}
+
+
+async def _create_openwebui_chat(task: str, recap: str) -> str | None:
+    """Plan A : crée une conversation Open WebUI pré-remplie (API interne non garantie).
+
+    Flux documenté par la communauté : POST /api/v1/chats/new (messages) →
+    injecte un message assistant vide → déclenche /api/chat/completions avec le
+    chat_id. Fragile across versions → ne jamais dépendre de ça seul (Plan B existe).
+    """
+    headers = {"Authorization": f"Bearer {OPENWEBUI_JWT}", "Content-Type": "application/json"}
+    model_id = "maria-reponse" if task == "reponse_client" else "maria-relance"
+    async with httpx.AsyncClient(base_url=OPENWEBUI_BASE_URL, timeout=30.0) as c:
+        r = await c.post("/api/v1/chats/new", headers=headers, json={
+            "model": model_id, "title": f"Maria — {task}",
+            "messages": [{"role": "user", "content": recap}],
+        })
+        if r.status_code != 200:
+            return None
+        chat_id = r.json().get("id")
+        if not chat_id:
+            return None
+        # Déclenche la complétion (le modèle répond dans la conversation existante).
+        await c.post("/api/chat/completions", headers=headers, json={
+            "model": model_id, "chat_id": chat_id, "stream": False,
+            "messages": [{"role": "user", "content": recap}],
+        })
+        return chat_id
+
+
+# ── Endpoint OpenAI-compatible (Open WebUI) ─────────────────────────────────
+@app.get("/v1/models")
+async def openai_models():
+    return {
+        "object": "list",
+        "data": [
+            {"id": m["id"], "object": "model", "owned_by": "ets-maria",
+             "name": m["name"]} for m in OPENAI_MODELS
+        ],
+    }
+
+
+@app.post("/v1/chat/completions")
+async def openai_chat(req: OpenAIChatRequest):
+    if req.model not in DIRECT_MODELS:
+        # maria-reponse / maria-relance : uniquement via /api/handoff (sélecteur).
+        return JSONResponse(
+            status_code=400,
+            content={"error": {"message": "Ce preset nécessite le sélecteur guidé "
+                                            "(Maria Agent). Passez par l'UI de sélection."}},
+        )
+    task = DIRECT_MODELS[req.model]
+    user_text = ""
+    for m in reversed(req.messages):
+        if m.get("role") == "user" and isinstance(m.get("content"), str):
+            user_text = m["content"]
+            break
+    if task == "mail_libre" and not user_text.strip():
+        return JSONResponse(status_code=422,
+                            content={"error": {"message": "Décrivez le mail à rédiger."}})
+
+    catalog_rows = catalog.search(user_text)
+    messages = prompts.build_messages(task, user_text, [], catalog.format_rows(catalog_rows))
+
+    payload = {"model": HERMES_MODEL, "messages": messages, "stream": req.stream}
+    if not req.stream:
+        try:
+            r = await app.state.http.post(
+                "/v1/chat/completions", json={**payload, "stream": False},
+                headers=app.state.hermes_headers,
+            )
+            r.raise_for_status()
+            content = r.json()["choices"][0]["message"]["content"]
+        except httpx.HTTPError as e:
+            return JSONResponse(status_code=502,
+                                content={"error": {"message": f"Gateway Hermes injoignable : {type(e).__name__}"}})
+        return {
+            "id": "chatcmpl-maria", "object": "chat.completion", "model": req.model,
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": content},
+                         "finish_reason": "stop"}], "usage": {"prompt_tokens": 0, "completion_tokens": 0},
+        }
+
+    def _chunk(delta=None, finish=None):
+        return {
+            "id": "chatcmpl-maria", "object": "chat.completion.chunk", "model": req.model,
+            "choices": [{"index": 0, "delta": delta or {}, "finish_reason": finish}],
+        }
+
+    async def stream():
+        yield f"data: {json.dumps(_chunk({'role': 'assistant'}))}\n\n"
+        try:
+            async with app.state.http.stream(
+                "POST", "/v1/chat/completions", json=payload, headers=app.state.hermes_headers
+            ) as r:
+                if r.status_code != 200:
+                    body = (await r.aread()).decode("utf-8", "replace")[:300]
+                    yield f"data: {json.dumps({'error': f'Gateway Hermes {r.status_code}: {body}'})}\n\n"
+                    return
+                async for line in r.aiter_lines():
+                    line = line.strip()
+                    if not line.startswith("data:"):
+                        continue
+                    data = line[5:].strip()
+                    if data == "[DONE]":
+                        continue
+                    try:
+                        chunk = json.loads(data)
+                    except json.JSONDecodeError:
+                        continue
+                    delta = (chunk.get("choices") or [{}])[0].get("delta", {}).get("content")
+                    if delta:
+                        yield f"data: {json.dumps(_chunk({'content': delta}))}\n\n"
+        except httpx.HTTPError as e:
+            yield f"data: {json.dumps({'error': f'Gateway Hermes injoignable : {type(e).__name__}'})}\n\n"
+        yield f"data: {json.dumps(_chunk(finish='stop'))}\n\n"
+        yield "data: [DONE]\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

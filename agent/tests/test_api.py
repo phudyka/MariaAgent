@@ -91,3 +91,59 @@ def test_chat_devis_d_un_autre_client_422(client):
                                        "client_id": cid_martinets, "document_id": doc_durand})
     assert r.status_code == 422
     assert "appartient" in r.json()["detail"]
+
+
+# ── Handoff du sélecteur guidé (mêmes validations 422 que /api/chat) ─────────
+def test_handoff_mail_libre_sans_message_422(client):
+    r = client.post("/api/handoff", json={"task": "mail_libre", "message": ""})
+    assert r.status_code == 422
+
+
+def test_handoff_reponse_sans_client_422(client):
+    r = client.post("/api/handoff", json={"task": "reponse_client", "message": "Bonjour…"})
+    assert r.status_code == 422
+    assert "client" in r.json()["detail"].lower()
+
+
+def test_handoff_relance_devis_d_un_autre_client_422(client):
+    cid_martinets = _client_id(client, "martinets")
+    _, doc_durand = _doc_id(client, "durand", "DE00125")
+    r = client.post("/api/handoff", json={"task": "relance_devis",
+                                          "client_id": cid_martinets, "document_id": doc_durand})
+    assert r.status_code == 422
+    assert "appartient" in r.json()["detail"]
+
+
+def test_handoff_renvoie_recap(client):
+    cid = _client_id(client, "martinets")
+    r = client.post("/api/handoff", json={"task": "reponse_client",
+                                          "client_id": cid, "message": "Pouvez-vous me confirmer le délai ?"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["mode"] == "paste"  # Plan B par défaut (pas de JWT configuré en test)
+    assert "FICHE ENTREPRISE" in body["recap"]
+    assert "CLIENT" in body["recap"] or "<client>" in body["recap"]
+
+
+# ── Endpoint OpenAI-compatible (presets Open WebUI) ─────────────────────────
+def test_v1_models(client):
+    r = client.get("/v1/models")
+    assert r.status_code == 200
+    ids = {m["id"] for m in r.json()["data"]}
+    assert {"maria-general", "maria-libre", "maria-reponse", "maria-relance"} <= ids
+
+
+def test_v1_chat_preset_reponse_refuse(client):
+    # maria-reponse / maria-relance ne sont pas servis en direct (sélecteur obligatoire).
+    r = client.post("/v1/chat/completions",
+                    json={"model": "maria-reponse", "messages": [{"role": "user", "content": "x"}]})
+    assert r.status_code == 400
+
+
+def test_v1_chat_general_sans_gateway(client):
+    # Pas de gateway Hermes en test : on vérifie seulement que le routing accepte
+    # le modèle et tente l'appel (échec 502 = bon signe, pas d'erreur de validation).
+    r = client.post("/v1/chat/completions",
+                    json={"model": "maria-general", "stream": False,
+                          "messages": [{"role": "user", "content": "Mail fournisseur pour pompe"}]})
+    assert r.status_code in (200, 502)

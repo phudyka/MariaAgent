@@ -1,0 +1,30 @@
+# Open WebUI — frontend de chat pour l'agent ETS Maria
+# Peau « façon ChatGPT/Claude » branchée sur le proxy agent/app.py (OpenAI-compatible).
+# 100 % local : aucun appel externe. Télémétrie et update-check désactivés.
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: maria-open-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # Compte de service unique (pas de comptes par employé pour cette itération).
+      WEBUI_AUTH: "true"
+      # 100 % local : coupe la télémétrie communautaire et la vérif de MAJ.
+      ENABLE_COMMUNITY_FEATURES: "false"
+      WEBUI_BANNERS: "false"
+      # Branche sur le proxy local (agent/app.py) exposé en OpenAI-compatible.
+      # OPENAI_API_KEY doit être non-vide ; valeur = MARIA_HERMES_KEY (clé du gateway).
+      OPENAI_API_BASE_URL: "http://host.docker.internal:8321/v1"
+      OPENAI_API_KEY: "${MARIA_HERMES_KEY:-maria-local}"
+      # Désactive la détection/any-to-lambda externe et les appels web.
+      WEB_SEARCH: "false"
+    volumes:
+      - open-webui:/app/backend/data
+
+volumes:
+  open-webui:

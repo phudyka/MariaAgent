@@ -44,8 +44,25 @@ fi
 curl -fsS --max-time 2 "$HERMES_URL/health" >/dev/null || { echo "ERREUR : le gateway Hermes ne répond pas ($HERMES_URL) — voir .hermes-gateway.log"; exit 1; }
 echo "Gateway Hermes OK ($HERMES_URL)"
 
-# ── 3. Proxy web (UI employés) ──────────────────────────────────────────────
+# ── 3. Proxy web (sélecteur guidé + endpoint OpenAI-compatible pour Open WebUI) ─
 HOST="${MARIA_HOST:-127.0.0.1}"
 PORT="${MARIA_PORT:-8321}"
-echo "Agent : http://$HOST:$PORT"
+echo "Agent (sélecteur + proxy OpenAI) : http://$HOST:$PORT"
+
+# ── 4. Open WebUI (frontend de chat façon ChatGPT/Claude) ───────────────────
+# Branché sur le proxy ci-dessus (OPENAI_API_BASE_URL = http://host:port/v1).
+# Compte de service unique, télémétrie/update-check coupés (voir docker-compose.yml).
+if command -v docker >/dev/null 2>&1; then
+  if [ -f docker-compose.yml ]; then
+    if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q maria-open-webui; then
+      echo "Démarrage d'Open WebUI…"
+      MARIA_HERMES_KEY="${MARIA_HERMES_KEY:-$(grep -oP "key:\s*'\K[^']+" ~/.hermes/config.yaml 2>/dev/null || true)}" \
+        docker compose up -d
+    fi
+    echo "Open WebUI : http://${HOST}:3000"
+  fi
+else
+  echo "docker non disponible — Open WebUI non démarré (lancer docker compose up -d manuellement)."
+fi
+
 exec .venv/bin/uvicorn app:app --app-dir agent --host "$HOST" --port "$PORT"

@@ -233,6 +233,8 @@
   }
   .recap .microlabel { color: var(--aqua-300); margin-bottom: 7px; }
   .recap .row { display: flex; gap: 8px; font-size: 12.5px; margin-top: 2px; min-width: 0; }
+  .recap-text { white-space: pre-wrap; word-break: break-word; font-family: var(--mono, monospace); font-size: 12.5px; line-height: 1.55; margin: 0 0 14px; }
+  #out a.primary { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; margin-top: 4px; }
   .recap .k { color: var(--fg-3); width: 48px; flex-shrink: 0; }
   .recap .v { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .recap .v .m { font-family: var(--mono); font-size: 12px; color: var(--aqua-300); }
@@ -393,9 +395,9 @@
 
     <button class="primary" id="go">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l16-4-4 16-5-6z"/><path d="M11 13l9-10"/></svg>
-      Générer le brouillon
+      Ouvrir dans Open WebUI
     </button>
-    <p class="hint">Astuce : <kbd>Ctrl</kbd> + <kbd>Entrée</kbd> pour générer.</p>
+    <p class="hint">Astuce : <kbd>Ctrl</kbd> + <kbd>Entrée</kbd>. Le contexte est assemblé puis transmis à l'UI de chat.</p>
   </section>
 
   <section class="card">
@@ -419,7 +421,7 @@
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>
         </div>
         <h3>Aucun brouillon</h3>
-        <p>Le brouillon s'affichera ici. Relisez et ajustez toujours avant envoi — l'assistant propose, l'humain décide.</p>
+         <p>Le contexte assemblé s'affichera ici, puis sera transmis à Open WebUI. Relisez toujours avant envoi — l'assistant propose, l'humain décide.</p>
       </div>
     </div>
     <div id="refine-row">
@@ -669,7 +671,7 @@ async function checkHealth() {
 
 function setBusy(b) {
   busy = b;
-  $("go").lastChild.textContent = b ? " Rédaction en cours…" : " Générer le brouillon";
+  $("go").lastChild.textContent = b ? " Transmission en cours…" : " Ouvrir dans Open WebUI";
   $("refine-go").disabled = b;
   updateGo();
 }
@@ -682,15 +684,15 @@ async function generate(message, isRefine) {
   if (need.msg && !message.trim() && !isRefine) return;
   setBusy(true);
   $("error").style.display = "none";
-  if (!isRefine) { history = []; $("refs").innerHTML = ""; }
-  let text = "";
-  renderOut("", true);
+  $("refs").innerHTML = ""; $("refine-row").style.display = "none";
 
   try {
-    const body = { task: currentTask, message, history };
+    // Handoff vers Open WebUI : on assemble le contexte côté serveur (anti-hallucination)
+    // et on le transmet à l'UI de chat (coller une fois, ou conversation pré-remplie).
+    const body = { task: currentTask, message };
     if (need.client && selClient) body.client_id = selClient.id;
     if (need.doc && selDoc) body.document_id = selDoc.id;
-    const resp = await fetch("/api/chat", {
+    const resp = await fetch("/api/handoff", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
@@ -699,44 +701,31 @@ async function generate(message, isRefine) {
       const detail = err && typeof err.detail === "string" ? err.detail : "HTTP " + resp.status;
       throw new Error(detail);
     }
-    const reader = resp.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split("\n\n"); buf = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const ev = JSON.parse(line.slice(6));
-        if (ev.type === "meta" && ev.catalog_refs.length && !isRefine) {
-          $("refs").innerHTML = "";
-          for (const ref of ev.catalog_refs) {
-            const c = document.createElement("span");
-            c.className = "chip"; c.textContent = ref;
-            $("refs").appendChild(c);
-          }
-        } else if (ev.type === "delta") {
-          text += ev.text;
-          renderOut(cleanText(text), true);
-        } else if (ev.type === "done") {
-          text = cleanText(text);
-          renderOut(text, false);
-          history.push({ role: "user", content: message }, { role: "assistant", content: text });
-          $("copy").disabled = $("reset").disabled = false;
-          $("refine-row").style.display = "flex";
-          if (ev.stats && ev.stats.seconds)
-            setStatus("ok", `Agent prêt · ${String(ev.stats.seconds).replace(".", ",")} s`);
-        } else if (ev.type === "error") {
-          renderOut(text, false); showError(ev.message);
-        }
-      }
-    }
+    const data = await resp.json();
+    renderHandoff(data);
   } catch (e) {
     showError("Erreur de communication avec l'agent local : " + e.message);
-    renderOut(text, false);
   } finally { setBusy(false); }
+}
+
+function renderHandoff(data) {
+  const out = $("out");
+  let html = `<pre class="recap-text">${escapeHtml(data.recap || "")}</pre>`;
+  if (data.mode === "openwebui" && data.chat_url) {
+    html += `<a class="primary" href="${data.chat_url}" target="_blank" rel="noopener">Ouvrir la conversation dans Open WebUI</a>`;
+  } else {
+    html += `<a class="primary" href="${data.openwebui_url || "http://127.0.0.1:3000"}" target="_blank" rel="noopener">Ouvrir Open WebUI</a>`
+          + `<p class="hint">Collez le bloc ci-dessus dans Open WebUI (aucune saisie d'ID requise).</p>`;
+  }
+  out.innerHTML = html;
+  $("copy").disabled = false;
+  $("reset").disabled = false;
+  setStatus("ok", "Contexte prêt — poursuivez dans Open WebUI");
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 /* ── Événements ───────────────────────────────────────────── */
