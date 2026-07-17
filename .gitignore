@@ -1,8 +1,6 @@
 .venv/
 __pycache__/
 *.pyc
-.ollama-serve.log
-.hermes-gateway.log
-.uvicorn.log
-*.eml
+.env
 agent/data/maria.db
+*.log
