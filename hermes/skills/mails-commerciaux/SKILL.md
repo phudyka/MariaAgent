@@ -43,9 +43,9 @@ Entrée : consigne libre (confirmation d'intervention, demande d'info fournisseu
   sinon terminer par `[À COMPLÉTER : signature]`.
 - Toute donnée manquante → `[À COMPLÉTER : nature de l'info]`, jamais une invention.
 
-## Ce que la demande contient déjà
+## Ce que le RAG fournit
 
-L'interface de l'entreprise enrichit chaque demande avec : l'instruction de tâche,
-la fiche entreprise et les extraits catalogue pertinents (format
-`- REF | nom | marque | prix € HT | stock | specs`). Travailler exclusivement à
-partir de ces éléments — ne pas chercher d'autres sources.
+Le RAG (recherche sémantique Open WebUI sur les données de l'entreprise)
+injecte automatiquement les passages pertinents : fiche entreprise, fiche
+client, devis, extraits catalogue, historique mails. Travailler exclusivement
+à partir de ces éléments — ne rien inventer, ne pas chercher d'autres sources.
