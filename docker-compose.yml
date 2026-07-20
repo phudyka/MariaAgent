@@ -71,10 +71,9 @@ services:
     networks: [net_internal]
 
   egress-proxy:
-    image: monokal/tinyproxy:latest
+    build: ./proxy
     container_name: maria-egress
     restart: unless-stopped
-    command: ["ANY"]
     volumes:
       - ./proxy/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
       - ./proxy/filter:/etc/tinyproxy/filter:ro
