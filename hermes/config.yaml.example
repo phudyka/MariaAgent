@@ -1,14 +1,14 @@
 # Configuration Hermes Agent — ETS Maria (agent local hermétique)
-# À copier vers ~/.hermes/config.yaml (home de l'utilisateur qui lance le gateway).
+# À copier vers ~/.hermes/config.yaml (monté dans le conteneur hermes en `/opt/data`).
 # Remplacer __CLE_API_GATEWAY__ par une clé aléatoire : openssl rand -hex 24
 # Modèle servi par Ollama local. Aucun provider cloud configuré.
 
 model:
   default: "qwen3:4b-instruct-2507-q4_K_M"
   provider: "ollama"                      # alias du provider "custom" (endpoint OpenAI-compatible)
-  base_url: "http://127.0.0.1:11434/v1"
+  base_url: "http://ollama:11434/v1"
   api_key: "ollama-local"                 # Ollama n'authentifie pas ; le SDK exige une valeur non vide
-  context_length: 65536                   # aligné sur OLLAMA_CONTEXT_LENGTH (KV q4_0 + flash attention) — minimum Hermes : 64k
+  context_length: 65536                   # aligné sur `OLLAMA_CONTEXT_LENGTH`, KV q4_0 + flash attention
 
 providers:
   ollama-local:
@@ -43,13 +43,11 @@ agent:
   verbose: false
 
 # Toolsets par plateforme.
-# api_server = ce que voient les employés via l'UI : AUCUN terminal, AUCUN accès
-# fichier/web/navigateur. Un mail client copié-collé peut contenir des instructions
-# hostiles (prompt injection) — la surface d'outils doit rester minimale.
-# IMPORTANT (multi-agents) : ce toolset est reconduit tel quel derrière Open WebUI.
-# Le proxy agent/app.py n'expose AUCUN tool-calling au modèle : l'assemblage des
-# données (client/devis/catalogue) reste déterministe côté serveur, jamais laissé
-# au modèle. Ne jamais élargir api_server à [terminal, file, web].
+# api_server = ce que voient les employés via Open WebUI. Le CONTEXTE métier
+# (client, devis, catalogue, mails) est injecté par le RAG natif d'Open WebUI,
+# pas par un tool donné au modèle. On ne donne AUCUN tool web/file/terminal au
+# modèle : un mail client collé peut contenir une injection de prompt.
+# Ne jamais élargir api_server à [terminal, file, web].
 # cli = accès complet pour l'administrateur en local.
 platform_toolsets:
   cli: [hermes-cli]
@@ -60,7 +58,9 @@ platforms:
     enabled: true
     extra:
       key: "__CLE_API_GATEWAY__"
-      host: "127.0.0.1"                   # jamais 0.0.0.0 : seul le proxy local y accède
+      host: "0.0.0.0"   # bind interne au conteneur (joignable par open-webui
+                        # sur net_internal). Port NON publié + réseau sans
+                        # egress => pas une exposition LAN.
       port: 8642
       model_name: "maria-agent"
 
