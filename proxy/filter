@@ -1,0 +1,7 @@
+^registry\.ollama\.ai$
+\.ollama\.ai$
+^ollama\.com$
+huggingface\.co$
+^cdn-lfs\.huggingface\.co$
+# domaine fournisseur démo (web search) — à ajuster
+^www\.hayward-pool\.fr$

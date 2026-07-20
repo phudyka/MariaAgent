@@ -1,53 +1,24 @@
-# Agent commercial local ETS Maria — démo POC 100 % local
-#
-# Stack (tout en conteneurs, aucune inférence externe) :
-#   - hermes-agent  : orchestrateur d'agents (gateway OpenAI-compatible sur :8642)
-#   - ollama        : sert le modèle local (qwen3:4b-instruct)
-#   - open-webui    : interface web pour les employés (compte de service unique)
-#
-# Démarrage (depuis ce dossier) :
-#   docker compose up -d
-#   docker compose exec ollama ollama pull qwen3:4b-instruct-2507-q4_K_M
-#   → ouvrir http://localhost:3000
-#
-# Le métier (persona + skill mail) vit dans ~/.hermes (monté en volume) :
-#   SOUL.md + skills/mails-commerciaux. Aucun code proxy custom.
+# Agent commercial local ETS Maria — démo POC 100 % local.
+# Sécurité par la topologie : ollama/hermes/open-webui sur net_internal
+# (internal: true, aucune route internet directe). egress-proxy est le SEUL
+# pont vers internet, restreint par allowlist. Un seul port publié : 3000.
 
 services:
-  hermes:
-    image: hermes-agent:local
-    container_name: maria-hermes
-    restart: unless-stopped
-    # Le gateway API est bindé en host par la config ~/.hermes/config.yaml
-    # (api_server.host). On publie le port pour que Open WebUI (réseau bridge)
-    # et les employés du LAN y accèdent.
-    ports:
-      - "8642:8642"
-    volumes:
-      - ~/.hermes:/opt/data
-    environment:
-      - HERMES_UID=1000
-      - HERMES_GID=1000
-      # Active l'API server OpenAI-compatible au-delà de localhost.
-      - API_SERVER_HOST=0.0.0.0
-      - API_SERVER_KEY=${MARIA_API_KEY:-change-me-in-prod}
-    # Le Dockerfile officiel utilise /init (s6-overlay) comme PID 1.
-    command: ["gateway", "run"]
-
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.6.8
     container_name: maria-ollama
     restart: unless-stopped
-    ports:
-      - "11434:11434"
     environment:
-      # Contexte pour charger SOUL + skills (~6300 tok) + génération sans
-      # déborder. 16k = confort sur CPU 4B ; monter à 32768 si besoin.
-      - OLLAMA_CONTEXT_LENGTH=16384
+      - OLLAMA_CONTEXT_LENGTH=65536
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_KV_CACHE_TYPE=q4_0
+      # ollama pull passe par le seul canal egress autorisé (registre Ollama).
+      - HTTP_PROXY=http://egress-proxy:8888
+      - HTTPS_PROXY=http://egress-proxy:8888
+      - NO_PROXY=localhost,127.0.0.1,hermes,open-webui
     volumes:
       - ollama_models:/root/.ollama
-    # GPU nvidia (GTX 1080, 8 GB) : le modèle 4B q4 (~2.5 GB) tourne
-    # en VRAM → ~30-40 tok/s au lieu de ~13 tok/s CPU.
+    networks: [net_internal]
     deploy:
       resources:
         reservations:
@@ -56,28 +27,64 @@ services:
               count: 1
               capabilities: [gpu]
 
+  hermes:
+    image: hermes-agent:local
+    container_name: maria-hermes
+    restart: unless-stopped
+    depends_on: [ollama]
+    volumes:
+      - ~/.hermes:/opt/data
+    environment:
+      - HERMES_UID=1000
+      - HERMES_GID=1000
+      # Bind 0.0.0.0 DANS le conteneur (joignable par open-webui sur net_internal).
+      # Aucun port publié + réseau sans egress => pas une exposition.
+      - API_SERVER_HOST=0.0.0.0
+      - API_SERVER_KEY=${MARIA_API_KEY:?MARIA_API_KEY manquante — copier .env.example vers .env}
+    command: ["gateway", "run"]
+    networks: [net_internal]
+
   open-webui:
-    image: ghcr.io/open-webui/open-webui:main
+    image: ghcr.io/open-webui/open-webui:v0.6.5
     container_name: maria-open-webui
     restart: unless-stopped
+    depends_on: [hermes]
     ports:
-      - "3000:8080"
-    depends_on:
-      - hermes
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "3000:8080"                       # SEUL port publié
     environment:
-      # Compte de service unique (pas de comptes par employé pour la démo).
-      WEBUI_AUTH: "true"
-      # 100 % local : coupe la télémétrie et la vérif de MAJ.
-      ENABLE_COMMUNITY_FEATURES: "false"
-      WEBUI_BANNERS: "false"
-      WEB_SEARCH: "false"
-      # Branche Open WebUI sur le gateway Hermes (API OpenAI-compatible).
-      OPENAI_API_BASE_URL: "http://hermes:8642/v1"
-      OPENAI_API_KEY: "${MARIA_API_KEY:-change-me-in-prod}"
+      - WEBUI_AUTH=true
+      - ENABLE_COMMUNITY_FEATURES=false
+      - WEBUI_BANNERS=false
+      - OPENAI_API_BASE_URL=http://hermes:8642/v1
+      - OPENAI_API_KEY=${MARIA_API_KEY:?MARIA_API_KEY manquante}
+      # RAG natif : embeddings locaux.
+      - RAG_EMBEDDING_ENGINE=
+      - RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+      # Web contrôlé : recherche activée, sortie forcée par le proxy allowlist.
+      - ENABLE_RAG_WEB_SEARCH=true
+      - RAG_WEB_SEARCH_ENGINE=duckduckgo
+      - HTTP_PROXY=http://egress-proxy:8888
+      - HTTPS_PROXY=http://egress-proxy:8888
+      - NO_PROXY=localhost,127.0.0.1,hermes,ollama
     volumes:
       - open-webui:/app/backend/data
+    networks: [net_internal]
+
+  egress-proxy:
+    image: monokal/tinyproxy:latest
+    container_name: maria-egress
+    restart: unless-stopped
+    command: ["ANY"]
+    volumes:
+      - ./proxy/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
+      - ./proxy/filter:/etc/tinyproxy/filter:ro
+    networks: [net_internal, net_egress]   # SEUL service à toucher net_egress
+
+networks:
+  net_internal:
+    internal: true
+  net_egress:
+    driver: bridge
 
 volumes:
   ollama_models:
