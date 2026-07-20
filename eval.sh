@@ -1,14 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 source .env
-GW="http://localhost:3000"   # via open-webui ; ou hermes:8642 en interne
 
 ask() {  # $1 = prompt ; renvoie le texte de la réponse
-  docker compose exec -T open-webui sh -c \
-    "wget -qO- --header='Authorization: Bearer $MARIA_API_KEY' \
-     --header='Content-Type: application/json' \
-     --post-data='{\"model\":\"maria-agent\",\"messages\":[{\"role\":\"user\",\"content\":\"$1\"}]}' \
-     http://hermes:8642/v1/chat/completions"
+  docker compose exec -T open-webui python3 -c "
+import json, urllib.request
+
+payload = json.dumps({
+    'model': 'maria-agent',
+    'messages': [{'role': 'user', 'content': '''$1'''}],
+}).encode()
+
+req = urllib.request.Request(
+    'http://hermes:8642/v1/chat/completions',
+    data=payload,
+    headers={
+        'Authorization': 'Bearer $MARIA_API_KEY',
+        'Content-Type': 'application/json',
+    },
+)
+with urllib.request.urlopen(req) as resp:
+    body = json.load(resp)
+print(body['choices'][0]['message']['content'])
+"
 }
 
 fail=0

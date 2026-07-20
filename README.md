@@ -69,7 +69,14 @@ Deux réseaux Docker :
 3. **Un seul port publié** : `open-webui:3000`, derrière `WEBUI_AUTH`.
    `hermes` n'est **pas** exposé au LAN — Open WebUI le joint par
    `net_internal`.
-4. Données Maria montées en **lecture seule** (`:ro`).
+4. **Source** des données Maria (`data/`) montée en lecture seule
+   (`/data:ro`) dans `open-webui` : impossible de la modifier depuis le
+   conteneur. La collection **Knowledge** ingérée (store vectoriel, issue
+   d'un upload manuel via l'UI) vit, elle, dans le volume `open-webui` en
+   **lecture-écriture** — ce n'est **pas** un invariant `:ro` à ce stade.
+   L'ingestion read-only automatisée est une piste de durcissement
+   documentée dans
+   [`docs/superpowers/specs/2026-07-20-securite-prod.md`](docs/superpowers/specs/2026-07-20-securite-prod.md).
 5. Toolset du modèle inchangé : `[skills, todo, memory]`. **Aucun** tool
    `web`/`file`/`terminal` donné au modèle. Le web est fetché par Open WebUI,
    jamais par un tool que l'injection pourrait détourner.
@@ -87,12 +94,19 @@ un document par source, pensés pour le RAG :
 | `mails/*.md`    | fils d'échanges par client                                     | historique mails |
 | `entreprise.md` | fiche entreprise + bloc signature                              | ancrage persona  |
 
-Ces fichiers sont chargés dans une collection **« Knowledge »** Open WebUI
-(montée `:ro`). Open WebUI embed en local, récupère le top-k pertinent pour
-chaque demande et l'injecte dans la requête envoyée à Hermes — **c'est le
-RAG qui joue le rôle d'enrichissement du contexte**, plus aucun
-copier-coller manuel par l'employé. L'embedding model se pull une fois via
-`egress-proxy` (allowlist).
+La source canonique (`data/`) est montée en lecture seule (`/data:ro`) dans
+le conteneur `open-webui` (`docker-compose.yml`). Ces fichiers sont
+**uploadés manuellement** (via l'UI) dans une collection **« Knowledge »**
+Open WebUI ; cette collection (store vectoriel) vit dans le volume
+`open-webui`, en **lecture-écriture** — ce n'est pas la source, et ce n'est
+**pas** en lecture seule à ce stade (l'ingestion read-only automatisée est
+une piste de durcissement documentée dans
+[`docs/superpowers/specs/2026-07-20-securite-prod.md`](docs/superpowers/specs/2026-07-20-securite-prod.md)).
+Open WebUI embed en local, récupère le top-k pertinent pour chaque demande
+et l'injecte dans la requête envoyée à Hermes — **c'est le RAG qui joue le
+rôle d'enrichissement du contexte**, plus aucun copier-coller manuel par
+l'employé. L'embedding model se pull une fois via `egress-proxy`
+(allowlist).
 
 ## Démarrage
 
@@ -112,11 +126,22 @@ docker build -t hermes-agent:local ~/.local/opt/hermes-agent
 sa valeur par défaut de `.env.example`. Le pull du modèle et les images
 Docker passent par `egress-proxy`, strictement allowlisté.
 
+> **Important** : `docker compose up -d` lancé seul ne fait **pas** ce
+> contrôle de clé — il démarrerait la stack même avec la clé par défaut.
+> Toujours démarrer via `./setup.sh`, seul point d'entrée qui refuse
+> `change-me-in-prod`.
+
 Une fois `setup.sh` terminé, ouvrir **http://localhost:3000**, créer le
 compte de service (première connexion = admin), puis suivre la checklist
 affichée en fin de script : modèle `maria-agent` (system prompt =
 `hermes/SOUL.md`), collection Knowledge « Maria » pointée sur `data/`, web
 search activé.
+
+> Vérification bring-up recommandée : confirmer l'absence de résolution DNS
+> sortante depuis `hermes`/`ollama` (`docker compose exec hermes nslookup
+> <domaine>` doit échouer) — canal résiduel indépendant du proxy HTTP,
+> détaillé dans
+> [`docs/superpowers/specs/2026-07-20-securite-prod.md`](docs/superpowers/specs/2026-07-20-securite-prod.md).
 
 > GPU : le `docker-compose.yml` réserve un device nvidia pour `ollama`. Sur
 > CPU, retirer le bloc `deploy.resources` — le modèle 4B tournera en CPU.

@@ -1,7 +1,12 @@
 ^registry\.ollama\.ai$
 \.ollama\.ai$
 ^ollama\.com$
-huggingface\.co$
-^cdn-lfs\.huggingface\.co$
+# huggingface.co et ses sous-domaines (ex. cdn-lfs.huggingface.co) — regex ancrée
+^([a-z0-9-]+\.)?huggingface\.co$
+# DuckDuckGo (web search Open WebUI) — confirmer les domaines exacts au 1er run
+^duckduckgo\.com$
+^html\.duckduckgo\.com$
+^lite\.duckduckgo\.com$
+^links\.duckduckgo\.com$
 # domaine fournisseur démo (web search) — à ajuster
 ^www\.hayward-pool\.fr$

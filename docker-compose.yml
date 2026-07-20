@@ -1,4 +1,4 @@
-# Agent commercial local ETS Maria — démo POC 100 % local.
+# Agent commercial local ETS Maria — démo RAG sécurisée locale.
 # Sécurité par la topologie : ollama/hermes/open-webui sur net_internal
 # (internal: true, aucune route internet directe). egress-proxy est le SEUL
 # pont vers internet, restreint par allowlist. Un seul port publié : 3000.
@@ -68,6 +68,10 @@ services:
       - NO_PROXY=localhost,127.0.0.1,hermes,ollama
     volumes:
       - open-webui:/app/backend/data
+      # Source canonique des données Maria, lecture seule dans le conteneur.
+      # L'ingestion (upload manuel dans la collection Knowledge) écrit dans
+      # le volume open-webui ci-dessus, PAS ici : /data reste ro.
+      - ./data:/data:ro
     networks: [net_internal]
 
   egress-proxy:

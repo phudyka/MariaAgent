@@ -3,7 +3,7 @@ set -euo pipefail
 
 # 1. Garde-fou clé
 [ -f .env ] || { echo "ERREUR : copier .env.example vers .env et fixer MARIA_API_KEY."; exit 1; }
-if grep -q '^MARIA_API_KEY=change-me-in-prod$' .env; then
+if grep -Eq '^[[:space:]]*MARIA_API_KEY[[:space:]]*=[[:space:]]*["'"'"']?change-me-in-prod["'"'"']?[[:space:]]*$' .env; then
   echo "ERREUR : MARIA_API_KEY est encore 'change-me-in-prod'."
   echo "  Générer : openssl rand -hex 24, puis coller dans .env"
   exit 1
@@ -29,7 +29,9 @@ cat <<'EOF'
 2. Workspace > Models > créer "maria-agent" :
    - Base model : maria-agent (gateway Hermes, déjà listé)
    - System prompt : coller le contenu de hermes/SOUL.md
-3. Workspace > Knowledge > "Maria" > uploader tout le dossier data/.
+3. Workspace > Knowledge > "Maria" > uploader tout le dossier data/
+   (source disponible en lecture seule dans le conteneur sous /data ;
+   l'upload lui-même se fait manuellement via l'UI).
 4. Rattacher la collection "Maria" au modèle "maria-agent".
 5. Settings > Web Search : activé (déjà via env), moteur duckduckgo.
 Prêt.

@@ -65,6 +65,29 @@ Ce modèle de défense ne change pas en production ; il doit être **maintenu**
 nouveau connecteur doit suivre le même principe (lecture seule, aucun accès
 donné en tool direct au modèle, tout passe par un index RAG intermédiaire).
 
+## Limites connues de la démo à durcir en prod
+
+- **Exfiltration DNS** : `net_internal` (`internal: true`) bloque le routage
+  IP direct vers internet pour `ollama`/`hermes`, mais le résolveur DNS
+  interne fourni par Docker peut, selon la configuration de l'hôte, relayer
+  des requêtes DNS émises depuis un réseau interne vers l'extérieur. Le
+  tunneling DNS (exfiltration de données encodées dans des sous-domaines de
+  requêtes de résolution) est un canal **indépendant** du proxy HTTP/HTTPS
+  et n'est **pas** couvert par l'allowlist `proxy/filter`. À tester au
+  bring-up : `docker compose exec hermes nslookup <domaine-arbitraire>` doit
+  échouer (ou à défaut ne renvoyer aucune résolution exploitable).
+  Durcissement prod : résolveur DNS local restreint à une allowlist
+  explicite, ou suppression pure et simple du besoin de résolution DNS
+  sortante pour `hermes`/`ollama`.
+- **Image `hermes-agent:local`** : construite en local (`docker build -t
+  hermes-agent:local ~/.local/opt/hermes-agent`), ce tag dépend du contenu
+  du répertoire d'installation au moment du `build` — non versionné, non
+  reproductible au sens strict (deux builds à des instants différents
+  peuvent produire des images différentes sans que le tag change). En
+  production : publier une image Hermes dans un registre, taguée par
+  version sémantique ou par digest de contenu, pour garantir traçabilité et
+  reproductibilité du déploiement.
+
 ## Chiffrement at-rest
 
 - **Volumes chiffrés** : LUKS (au niveau disque/partition) ou gocryptfs (au
