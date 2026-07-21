@@ -1,0 +1,44 @@
+﻿Réf client;Nom;Prénom;Email;Mobile;Téléphone fixe;Adresse;CP;Ville;Type piscine;Volume (m³);Contrat entretien;Client depuis
+CLI-0001;Durand;Jean-Pierre;jp.durand@example.com;06 12 34 56 78;04 93 61 02 11;8 chemin des Mimosas;06600;Antibes;8x4 liner;48;Annuel;2019
+CLI-0002;Rossi;Marco;m.rossi@example.com;06 78 90 12 34;04 93 31 45 02;22 boulevard de la Méditerranée;06700;Saint-Laurent-du-Var;10x5 carrelage;75;Annuel;2018
+CLI-0003;Lefevre;Anne-Marie;am.lefevre@example.com;06 45 67 89 01;04 93 39 88 24;15 rue de la Paix;06400;Cannes;6x3 liner;27;Bi-annuel;2021
+CLI-0004;Martin;Alain;a.martin@example.com;06 27 23 96 79;04 92 85 64 14;8 avenue des Palmiers;06000;Nice;7x3,5 béton;37;Annuel;2014
+CLI-0005;Bernard;Catherine;c.bernard@example.org;06 93 99 79 63;04 92 67 85 45;2 chemin des Restanques;06270;Villeneuve-Loubet;8x4 liner;48;Ponctuel;2022
+CLI-0006;Dubois;Éric;e.dubois@example.com;07 23 21 58 22;04 93 54 87 43;12 route de la Colline;06800;Cagnes-sur-Mer;6x3 liner;27;Annuel;2019
+CLI-0007;Moreau;Nadia;n.moreau@example.fr;07 83 34 18 15;04 97 39 47 20;60 avenue des Palmiers;06600;Antibes;10x4 liner;60;Bi-annuel;2017
+CLI-0008;Laurent;Yves;y.laurent@example.com;07 55 36 95 44;04 97 97 92 19;156 chemin des Restanques;06500;Menton;12x5 carrelage;90;Annuel;2019
+CLI-0009;Girard;Sylvie;s.girard@example.fr;06 97 51 17 39;04 92 50 61 44;17 boulevard du Littoral;06250;Mougins;5x3 coque;23;Bi-annuel;2020
+CLI-0010;Fontaine;Patrick;p.fontaine@example.fr;07 28 43 27 41;04 97 81 78 43;150 allée des Pins;06500;Menton;8x4 PVC armé;48;Ponctuel;2020
+CLI-0011;Chevalier;Bruno;b.chevalier@example.org;07 21 16 24 29;04 97 30 97 64;153 avenue des Palmiers;06700;Saint-Laurent-du-Var;6x3 liner;27;Ponctuel;2017
+CLI-0012;Roux;Muriel;m.roux@example.fr;06 97 24 97 78;04 93 92 53 24;76 allée des Pins;06250;Mougins;10x4 liner;60;Ponctuel;2013
+CLI-0013;Blanc;Sophie;s.blanc@example.org;06 74 23 90 48;04 97 74 87 35;40 montée des Cigales;06410;Biot;7x3,5 béton;37;Annuel;2023
+CLI-0014;Garnier;Sabine;s.garnier@example.com;07 72 12 24 56;04 93 40 17 40;146 avenue des Palmiers;06560;Valbonne;10x4 liner;60;Ponctuel;2012
+CLI-0015;Faure;Julie;j.faure@example.com;06 94 70 80 31;04 93 77 87 64;55 traverse des Vignes;06560;Valbonne;10x4 liner;60;Annuel;2023
+CLI-0016;Mercier;Pascal;p.mercier@example.fr;07 25 41 38 18;04 93 12 85 80;59 chemin du Vallon;06140;Vence;12x5 carrelage;90;Annuel;2014
+CLI-0017;Boyer;Julie;j.boyer@example.com;06 14 52 19 75;04 92 45 95 72;55 traverse des Vignes;06410;Biot;8x4 liner;48;Aucun;2013
+CLI-0018;Lemoine;Aurélie;a.lemoine@example.fr;07 34 22 22 94;04 93 55 64 62;120 rue des Lauriers;06250;Mougins;9x4 coque polyester;54;Annuel;2021
+CLI-0019;Perrot;Paul;p.perrot@example.com;06 34 34 78 67;04 92 64 33 45;119 boulevard du Littoral;06140;Vence;12x5 carrelage;90;Annuel;2024
+CLI-0020;Colin;Hélène;h.colin@example.com;06 93 79 11 21;04 92 31 62 72;124 boulevard du Littoral;06560;Valbonne;10x4 liner;60;Ponctuel;2024
+CLI-0021;Vidal;Paul;p.vidal@example.com;07 43 68 46 64;04 97 81 94 72;40 boulevard du Littoral;06400;Cannes;5x3 coque;23;Annuel;2015
+CLI-0022;Caron;Paul;p.caron@example.com;07 17 16 84 71;04 97 77 30 17;131 avenue des Palmiers;06270;Villeneuve-Loubet;10x4 liner;60;Annuel;2024
+CLI-0023;Renaud;Julie;j.renaud@example.org;06 61 25 82 41;04 97 86 15 89;21 allée des Pins;06270;Villeneuve-Loubet;10x5 carrelage;75;Aucun;2021
+CLI-0024;Marchand;Aurélie;a.marchand@example.fr;06 95 50 40 43;04 93 26 95 92;77 route de la Colline;06110;Le Cannet;12x5 carrelage;90;Annuel;2016
+CLI-0025;Dumas;Sophie;s.dumas@example.com;06 74 43 26 54;04 92 41 57 46;41 route de la Colline;06250;Mougins;10x5 carrelage;75;Aucun;2024
+CLI-0026;Charpentier;Pascal;p.charpentier@example.com;07 94 23 27 43;04 92 23 80 29;70 impasse des Oliviers;06270;Villeneuve-Loubet;10x4 liner;60;Annuel;2020
+CLI-0027;Menard;Éric;e.menard@example.org;07 42 16 21 91;04 93 45 15 10;86 chemin des Restanques;06700;Saint-Laurent-du-Var;7x3,5 béton;37;Bi-annuel;2021
+CLI-0028;Barbier;Sylvie;s.barbier@example.org;07 81 11 24 19;04 97 29 79 14;95 chemin du Vallon;06410;Biot;8x4 PVC armé;48;Annuel;2019
+CLI-0029;Leclerc;Frédéric;f.leclerc@example.fr;07 15 55 36 97;04 92 95 23 55;144 allée des Pins;06400;Cannes;8x4 liner;48;Annuel;2020
+CLI-0030;Aubert;Thierry;t.aubert@example.com;07 13 32 52 62;04 97 41 44 30;180 avenue des Palmiers;06210;Mandelieu;6x3 liner;27;Annuel;2017
+CLI-0031;Meyer;Isabelle;i.meyer@example.fr;07 49 39 38 13;04 97 34 61 52;72 avenue des Palmiers;06700;Saint-Laurent-du-Var;9x4 coque polyester;54;Bi-annuel;2023
+CLI-0032;Bonnet;Laurence;l.bonnet@example.fr;07 13 24 43 32;04 97 43 14 23;153 allée des Pins;06500;Menton;10x4 liner;60;Bi-annuel;2016
+CLI-0033;Riviere;Frédéric;f.riviere@example.com;07 83 34 42 15;04 97 65 10 76;138 boulevard du Littoral;06270;Villeneuve-Loubet;10x4 liner;60;Ponctuel;2016
+CLI-0034;Gaillard;Julie;j.gaillard@example.org;07 94 25 48 74;04 93 95 62 51;104 impasse des Oliviers;06500;Menton;12x5 carrelage;90;Annuel;2019
+CLI-0035;Pons;Christine;c.pons@example.org;06 88 82 48 61;04 97 10 48 46;54 allée des Pins;06140;Vence;5x3 coque;23;Aucun;2023
+CLI-0036;Sarr;Muriel;m.sarr@example.fr;07 66 96 37 75;04 93 31 94 20;73 traverse des Vignes;06500;Menton;12x5 carrelage;90;Aucun;2021
+CLI-0037;Delmas;Éric;e.delmas@example.org;07 38 35 28 13;04 92 41 70 88;19 route de la Colline;06600;Antibes;9x4 coque polyester;54;Aucun;2017
+CLI-0038;Costa;Christine;c.costa@example.fr;07 41 28 93 98;04 92 23 64 38;46 traverse des Vignes;06410;Biot;5x3 coque;23;Annuel;2018
+CLI-0039;Ferrand;Denis;d.ferrand@example.fr;06 69 95 77 81;04 97 50 66 88;130 allée des Pins;06700;Saint-Laurent-du-Var;10x5 carrelage;75;Aucun;2024
+CLI-0040;Noel;Hélène;h.noel@example.fr;07 41 91 45 76;04 93 90 40 45;113 avenue des Palmiers;06400;Cannes;8x4 PVC armé;48;Bi-annuel;2022
+CLI-0041;Lucas;Thierry;t.lucas@example.fr;06 27 29 39 59;04 97 29 37 18;107 allée des Pins;06800;Cagnes-sur-Mer;12x5 carrelage;90;Aucun;2016
+CLI-0042;Berger;Yves;y.berger@example.com;07 59 84 99 12;04 97 58 71 10;91 impasse des Oliviers;06140;Vence;8x4 liner;48;Ponctuel;2023
+CLI-0043;Marchetti;Karine;k.marchetti@example.org;06 72 38 44 65;04 93 13 59 53;172 allée des Pins;06110;Le Cannet;10x4 liner;60;Annuel;2022

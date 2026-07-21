@@ -84,8 +84,11 @@ Points qui demandent de lire plusieurs fichiers pour être compris :
 Ces propriétés sont le cœur de la démo. Toute modif du `docker-compose.yml`,
 du `proxy/` ou de `config.yaml.example` doit les préserver :
 
-- **Un seul port publié** : `open-webui:3000`, derrière `WEBUI_AUTH`. `hermes`
-  et `ollama` ne sont **jamais** exposés à l'hôte/LAN.
+- **Un seul port produit publié** : `open-webui:3000`, derrière `WEBUI_AUTH`.
+  `hermes` et `ollama` ne sont **jamais** exposés à l'hôte/LAN. (Exception démo
+  assumée : `mailpit` publie `8025`/`1025` en **loopback seul** — outil de démo
+  hors produit, sur `net_publish` masquerade off = aucun egress ; Maria ne s'y
+  connecte pas, toolset figé.)
 - **`net_internal` est `internal: true`** (aucune route internet directe).
   `egress-proxy` est le **seul** service sur `net_egress`, donc le seul chemin
   vers internet. Tout passe par lui via `HTTP_PROXY`.

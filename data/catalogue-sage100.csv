@@ -1,0 +1,93 @@
+﻿Référence;Désignation;Famille;Sous-famille;Marque;Fournisseur;Code-barres;Prix achat HT;Coef;Prix vente HT;Taux TVA;Unité;Stock;Stock mini;Délai appro
+POMP-075;Pompe filtration 0,75 CV;Filtration;Pompes;Hayward;SCP France;3490000000013;187,10;1,55;290,00;20,00 %;U;3;2;5 j
+POMP-100;Pompe filtration 1,0 CV;Filtration;Pompes;Hayward;SCP France;3490000000020;219,35;1,55;340,00;20,00 %;U;4;2;5 j
+POMP-150;Pompe filtration 1,5 CV;Filtration;Pompes;Hayward;SCP France;3490000000037;270,97;1,55;420,00;20,00 %;U;6;2;5 j
+POMP-200;Pompe filtration 2,0 CV;Filtration;Pompes;Pentair;Procopi;3490000000044;361,29;1,55;560,00;20,00 %;U;2;1;7 j
+POMP-VS;Pompe à vitesse variable;Filtration;Pompes;Pentair;Procopi;3490000000051;653,33;1,50;980,00;20,00 %;U;3;1;7 j
+FILT-400;Filtre à sable Ø400;Filtration;Filtres;Hayward;SCP France;3490000000068;154,84;1,55;240,00;20,00 %;U;4;2;5 j
+FILT-500;Filtre à sable Ø500;Filtration;Filtres;Hayward;SCP France;3490000000075;200,00;1,55;310,00;20,00 %;U;3;2;5 j
+FILT-600;Filtre à sable Ø600;Filtration;Filtres;Hayward;SCP France;3490000000082;277,42;1,55;430,00;20,00 %;U;2;1;7 j
+FILT-CART;Filtre à cartouche;Filtration;Filtres;AstralPool;Procopi;3490000000099;167,74;1,55;260,00;20,00 %;U;5;2;5 j
+FILT-DIA;Filtre à diatomées;Filtration;Filtres;AstralPool;Procopi;3490000000105;346,67;1,50;520,00;20,00 %;U;1;1;10 j
+VANN-6V;"Vanne 6 voies 1""1/2";Filtration;Robinetterie;Hayward;SCP France;3490000000112;59,38;1,60;95,00;20,00 %;U;8;3;3 j
+VANN-2V;Vanne d'arrêt 2 voies Ø50;Filtration;Robinetterie;AstralPool;SCP France;3490000000129;28,24;1,70;48,00;20,00 %;U;12;4;3 j
+MANO-FILT;Manomètre de filtre;Filtration;Accessoires;—;SCP France;3490000000136;13,33;1,80;24,00;20,00 %;U;15;5;3 j
+PREF-BASK;Panier de préfiltre pompe;Filtration;Accessoires;Hayward;SCP France;3490000000143;10,56;1,80;19,00;20,00 %;U;20;5;3 j
+UNION-50;Raccord union Ø50 à coller;Filtration;Raccords;—;SCP France;3490000000150;4,74;1,90;9,00;20,00 %;U;60;15;3 j
+SABL-25;Sable filtrant 25 kg;Filtration;Média;—;SCP France;3490000000167;10,59;1,70;18,00;20,00 %;Sac;30;8;3 j
+VERR-25;Verre filtrant 25 kg;Filtration;Média;AstralPool;Procopi;3490000000174;20,00;1,60;32,00;20,00 %;Sac;18;5;5 j
+DIAT-3;Poudre de diatomée 3 kg;Filtration;Média;—;Procopi;3490000000181;12,35;1,70;21,00;20,00 %;Sac;12;4;5 j
+CHLOR-5;Chlore lent galets 5 kg;Traitement;Désinfection;Bayrol;Bayrol;3490000000198;24,71;1,70;42,00;20,00 %;Seau;25;8;5 j
+CHLOR-CHOC;Chlore choc 5 kg;Traitement;Désinfection;Bayrol;Bayrol;3490000000204;22,35;1,70;38,00;20,00 %;Seau;20;6;5 j
+BROME-5;Brome galets 5 kg;Traitement;Désinfection;Bayrol;Bayrol;3490000000211;33,33;1,65;55,00;20,00 %;Seau;10;3;7 j
+PHMOINS-10;pH moins granulés 10 kg;Traitement;Équilibre;Bayrol;Bayrol;3490000000228;17,06;1,70;29,00;20,00 %;Seau;20;6;5 j
+PHPLUS-5;pH plus granulés 5 kg;Traitement;Équilibre;Bayrol;Bayrol;3490000000235;12,94;1,70;22,00;20,00 %;Seau;15;5;5 j
+FLOC-1;Floculant liquide 1 L;Traitement;Clarification;Bayrol;Bayrol;3490000000242;8,57;1,75;15,00;20,00 %;U;18;5;5 j
+ANTIALG-5;Anti-algues concentré 5 L;Traitement;Clarification;Bayrol;Bayrol;3490000000259;20,00;1,70;34,00;20,00 %;U;12;4;5 j
+STAB-5;Stabilisant chlore 5 kg;Traitement;Équilibre;—;Procopi;3490000000266;27,27;1,65;45,00;20,00 %;Seau;8;3;7 j
+SEL-25;Sel piscine 25 kg;Traitement;Électrolyse;—;SCP France;3490000000273;8,24;1,70;14,00;20,00 %;Sac;40;10;3 j
+ELEC-SEL;Électrolyseur au sel ≤80 m³;Traitement;Électrolyse;Zodiac;Zodiac;3490000000280;520,00;1,50;780,00;20,00 %;U;3;1;7 j
+ELEC-SEL-XL;Électrolyseur au sel ≤120 m³;Traitement;Électrolyse;Zodiac;Zodiac;3490000000297;660,00;1,50;990,00;20,00 %;U;1;1;10 j
+REG-PH;Régulateur pH automatique;Traitement;Régulation;AstralPool;Procopi;3490000000303;167,74;1,55;260,00;20,00 %;U;4;2;7 j
+POMP-DOS;Pompe doseuse pH;Traitement;Régulation;AstralPool;Procopi;3490000000310;135,48;1,55;210,00;20,00 %;U;4;2;7 j
+SONDE-PH;Sonde pH de rechange;Traitement;Régulation;AstralPool;Procopi;3490000000327;28,24;1,70;48,00;20,00 %;U;10;3;5 j
+SONDE-RX;Sonde redox de rechange;Traitement;Régulation;AstralPool;Procopi;3490000000334;37,58;1,65;62,00;20,00 %;U;8;3;5 j
+TEST-BAND;Testeur bandelettes x50;Traitement;Analyse;Bayrol;Bayrol;3490000000341;6,67;1,80;12,00;20,00 %;U;25;8;3 j
+TEST-ELEC;Testeur électronique chlore/pH;Traitement;Analyse;—;Procopi;3490000000358;57,42;1,55;89,00;20,00 %;U;3;2;7 j
+ROBOT-PX;Robot nettoyeur PoolX;Nettoyage;Robots;Zodiac;Zodiac;3490000000365;593,33;1,50;890,00;20,00 %;U;2;1;7 j
+ROBOT-CL;Robot électrique CleanLine;Nettoyage;Robots;Dolphin;Dolphin (Maytronics);3490000000372;433,33;1,50;650,00;20,00 %;U;3;1;7 j
+ROBOT-PRO;Robot pro fond+parois+ligne;Nettoyage;Robots;Dolphin;Dolphin (Maytronics);3490000000389;860,00;1,50;1290,00;20,00 %;U;0;1;3-4 sem.
+ROBOT-HYD;Nettoyeur hydraulique à aspiration;Nettoyage;Robots;Zodiac;Zodiac;3490000000396;135,48;1,55;210,00;20,00 %;U;4;2;7 j
+BALAI-MAN;Balai aspirateur manuel;Nettoyage;Manuel;AstralPool;SCP France;3490000000402;26,47;1,70;45,00;20,00 %;U;10;3;3 j
+BROSSE-PAR;Brosse parois et ligne d'eau;Nettoyage;Manuel;—;SCP France;3490000000419;10,00;1,80;18,00;20,00 %;U;20;6;3 j
+EPUIS-PRO;Épuisette de surface pro;Nettoyage;Manuel;—;SCP France;3490000000426;12,22;1,80;22,00;20,00 %;U;15;5;3 j
+EPUIS-FOND;Épuisette de fond renforcée;Nettoyage;Manuel;—;SCP France;3490000000433;14,44;1,80;26,00;20,00 %;U;12;4;3 j
+MANCHE-TEL;Manche télescopique 1,8-3,6 m;Nettoyage;Manuel;—;SCP France;3490000000440;20,59;1,70;35,00;20,00 %;U;14;4;3 j
+TUYAU-FLOT;Tuyau flottant Ø38;Nettoyage;Manuel;—;SCP France;3490000000457;5,00;1,80;9,00;20,00 %;ml;80;20;3 j
+LINER-75;Liner 75/100e bleu uni;Revêtement;Liners;AstralPool;Procopi;3490000000464;17,50;1,60;28,00;20,00 %;m²;40;10;10 j
+LINER-85;Liner armé 85/100e gris;Revêtement;Liners;Renolit;Procopi;3490000000471;24,38;1,60;39,00;20,00 %;m²;25;8;10 j
+LINER-SABLE;Liner 75/100e sable;Revêtement;Liners;AstralPool;Procopi;3490000000488;18,75;1,60;30,00;20,00 %;m²;22;6;10 j
+PVC-ARME;PVC armé 150/100e;Revêtement;Membrane;Renolit;Procopi;3490000000495;29,68;1,55;46,00;20,00 %;m²;18;5;15 j
+FEUTRE-GEO;Feutre géotextile 300 g;Revêtement;Sous-couche;—;Procopi;3490000000501;2,22;1,80;4,00;20,00 %;m²;120;30;5 j
+COLLE-PVC;Colle PVC armé 900 g;Revêtement;Pose;—;Procopi;3490000000518;10,86;1,75;19,00;20,00 %;U;15;5;5 j
+PEINT-PISC;Peinture piscine époxy 20 kg;Revêtement;Pose;—;Procopi;3490000000525;120,00;1,50;180,00;20,00 %;Kit;3;1;10 j
+MARG-PIERRE;Margelle pierre reconstituée;Aménagement;Margelles;—;SCP France;3490000000532;21,25;1,60;34,00;20,00 %;U;60;15;10 j
+MARG-TRAV;Margelle travertin;Aménagement;Margelles;—;Procopi;3490000000549;27,10;1,55;42,00;20,00 %;U;40;10;15 j
+PLAGE-BOIS;Lame terrasse composite;Aménagement;Plage;—;Procopi;3490000000556;25,16;1,55;39,00;20,00 %;m²;50;12;15 j
+GALET-DECO;Galet décoratif 25 kg;Aménagement;Plage;—;SCP France;3490000000563;7,06;1,70;12,00;20,00 %;Sac;30;8;5 j
+BACHE-BUL;Bâche à bulles 400 µ;Couverture;Été;—;Procopi;3490000000570;5,00;1,70;8,50;20,00 %;m²;50;12;7 j
+BACHE-BUL-500;Bâche à bulles 500 µ premium;Couverture;Été;—;Procopi;3490000000587;6,67;1,65;11,00;20,00 %;m²;30;8;7 j
+COUV-HIV;Couverture d'hivernage opaque;Couverture;Hiver;AstralPool;Procopi;3490000000594;7,50;1,60;12,00;20,00 %;m²;30;8;7 j
+BARRE-SECU;Couverture à barres sécurité;Couverture;Sécurité;—;Procopi;3490000000600;14,67;1,50;22,00;20,00 %;m²;15;4;3-4 sem.
+ENROU-MOB;Enrouleur mobile bâche;Couverture;Accessoires;—;Procopi;3490000000617;154,84;1,55;240,00;20,00 %;U;4;2;10 j
+VOLET-IMM;Volet roulant immergé;Couverture;Volets;Aquadeck;Aquadeck;3490000000624;2800,00;1,50;4200,00;20,00 %;U;0;0;4-6 sem.
+VOLET-HB;Volet roulant hors-sol;Couverture;Volets;Aquadeck;Aquadeck;3490000000631;1866,67;1,50;2800,00;20,00 %;U;0;0;4-6 sem.
+ABRI-BAS;Abri bas télescopique 3 mod.;Couverture;Abris;—;Procopi;3490000000648;4689,66;1,45;6800,00;20,00 %;U;0;0;5-7 sem.
+ABRI-MI;Abri mi-haut télescopique;Couverture;Abris;—;Procopi;3490000000655;6551,72;1,45;9500,00;20,00 %;U;0;0;6-8 sem.
+RECH-ELEC;Réchauffeur électrique 6 kW;Chauffage;Électrique;—;Procopi;3490000000662;253,33;1,50;380,00;20,00 %;U;2;1;10 j
+PAC-9;Pompe à chaleur 9 kW;Chauffage;PAC;Zodiac;Zodiac;3490000000679;1689,66;1,45;2450,00;20,00 %;U;1;1;10 j
+PAC-13;Pompe à chaleur 13 kW;Chauffage;PAC;Pentair;Procopi;3490000000686;2137,93;1,45;3100,00;20,00 %;U;0;0;3-4 sem.
+PAC-17;Pompe à chaleur 17 kW;Chauffage;PAC;Pentair;Procopi;3490000000693;2655,17;1,45;3850,00;20,00 %;U;0;0;3-4 sem.
+ECHANG-40;Échangeur thermique 40 kW;Chauffage;Échangeur;—;Procopi;3490000000709;413,33;1,50;620,00;20,00 %;U;1;1;15 j
+PROJ-LED;Projecteur LED blanc PAR56 18 W;Éclairage;Projecteurs;AstralPool;CCEI;3490000000716;90,62;1,60;145,00;20,00 %;U;6;2;5 j
+PROJ-RGB;Projecteur LED RGB PAR56 18 W;Éclairage;Projecteurs;CCEI;CCEI;3490000000723;118,12;1,60;189,00;20,00 %;U;4;2;7 j
+TRANSFO-100;Transformateur 100 VA;Éclairage;Alimentation;CCEI;CCEI;3490000000730;46,88;1,60;75,00;20,00 %;U;8;3;5 j
+NICHE-BETON;Niche béton PAR56;Éclairage;Accessoires;—;SCP France;3490000000747;26,25;1,60;42,00;20,00 %;U;10;3;7 j
+TELECO-LED;Télécommande projecteurs RGB;Éclairage;Accessoires;CCEI;CCEI;3490000000754;34,38;1,60;55,00;20,00 %;U;6;2;7 j
+SKIM-STD;Skimmer standard grande meurtrière;Plomberie;Pièces à sceller;Hayward;SCP France;3490000000761;35,15;1,65;58,00;20,00 %;U;12;4;5 j
+SKIM-MIROIR;Skimmer miroir;Plomberie;Pièces à sceller;Hayward;SCP France;3490000000778;57,50;1,60;92,00;20,00 %;U;4;2;7 j
+BUSE-REF;Buse de refoulement orientable;Plomberie;Pièces à sceller;Hayward;SCP France;3490000000785;6,67;1,80;12,00;20,00 %;U;30;8;3 j
+BONDE-FOND;Bonde de fond antivortex;Plomberie;Pièces à sceller;AstralPool;SCP France;3490000000792;20,00;1,70;34,00;20,00 %;U;8;3;5 j
+PRISE-BAL;Prise balai murale;Plomberie;Pièces à sceller;AstralPool;SCP France;3490000000808;8,33;1,80;15,00;20,00 %;U;18;5;3 j
+COFF-ELEC;Coffret électrique filtration;Plomberie;Électrique;—;CCEI;3490000000815;106,45;1,55;165,00;20,00 %;U;4;2;7 j
+HORL-FILT;Horloge de filtration modulaire;Plomberie;Électrique;—;CCEI;3490000000822;23,03;1,65;38,00;20,00 %;U;10;3;5 j
+TUYAU-50;Tuyau PVC pression Ø50;Plomberie;Canalisation;—;SCP France;3490000000839;3,16;1,90;6,00;20,00 %;ml;100;25;3 j
+TUYAU-63;Tuyau PVC pression Ø63;Plomberie;Canalisation;—;SCP France;3490000000846;4,21;1,90;8,00;20,00 %;ml;80;20;3 j
+COUDE-50;Coude PVC 90° Ø50;Plomberie;Raccords;—;SCP France;3490000000853;1,58;1,90;3,00;20,00 %;U;90;20;3 j
+COLLIER-PS;Collier de prise en charge Ø50;Plomberie;Raccords;—;SCP France;3490000000860;7,78;1,80;14,00;20,00 %;U;25;6;3 j
+ECHEL-INOX;Échelle inox 3 marches;Accessoires;Accès;AstralPool;SCP France;3490000000877;112,90;1,55;175,00;20,00 %;U;5;2;7 j
+ECHEL-4;Échelle inox 4 marches;Accessoires;Accès;AstralPool;SCP France;3490000000884;135,48;1,55;210,00;20,00 %;U;3;1;7 j
+ALARM-IMM;Alarme d'immersion;Sécurité;Alarmes;—;Procopi;3490000000891;173,33;1,50;260,00;20,00 %;U;4;2;7 j
+BARRIERE-SEC;Barrière de sécurité (module 3 m);Sécurité;Barrières;—;Procopi;3490000000907;59,33;1,50;89,00;20,00 %;U;10;3;15 j
+DOUCHE-SOL;Douche solaire 35 L;Accessoires;Confort;—;Procopi;3490000000914;154,84;1,55;240,00;20,00 %;U;3;1;10 j
+THERM-FLOT;Thermomètre flottant;Accessoires;Confort;—;SCP France;3490000000921;4,21;1,90;8,00;20,00 %;U;30;8;3 j

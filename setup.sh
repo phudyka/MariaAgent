@@ -22,6 +22,10 @@ docker compose up -d
 echo "Pull du modèle (une fois, ~2-4 Go)…"
 docker compose exec ollama ollama pull qwen3:4b-instruct-2507-q4_K_M
 
+# 5. Seed de la boîte mail de démo (Mailpit) avec data/inbox/*.eml
+echo "Seed de l'inbox de démo (Mailpit)…"
+./seed-inbox.sh || echo "  (seed inbox ignoré — Mailpit pas prêt ?)"
+
 cat <<'EOF'
 
 === Préconfiguration Open WebUI (http://localhost:3000) ===
@@ -34,5 +38,11 @@ cat <<'EOF'
    l'upload lui-même se fait manuellement via l'UI).
 4. Rattacher la collection "Maria" au modèle "maria-agent".
 5. Settings > Web Search : activé (déjà via env), moteur duckduckgo.
+
+=== Boîte mail de démo (Mailpit) — http://127.0.0.1:8025 ===
+- Inbox factice contact@ets-maria.fr, seedée depuis data/inbox/*.eml.
+- Re-seeder à tout moment : ./seed-inbox.sh
+- Flux démo : ouvrir un mail -> copier -> coller dans Maria (modele "Maria — catalogue").
+- Mailpit est un outil de démo local (loopback, aucun egress) ; Maria ne s'y connecte pas.
 Prêt.
 EOF
