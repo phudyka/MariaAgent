@@ -15,7 +15,10 @@ services:
       # ollama pull passe par le seul canal egress autorisé (registre Ollama).
       - HTTP_PROXY=http://egress-proxy:8888
       - HTTPS_PROXY=http://egress-proxy:8888
-      - NO_PROXY=localhost,127.0.0.1,hermes,open-webui
+      # 0.0.0.0 = adresse du serveur ollama local (OLLAMA_HOST par défaut).
+      # Sans lui, l'appel du CLI `ollama pull` vers son propre serveur part dans
+      # l'egress-proxy (refusé, "0.0.0.0" hors allowlist) => pull impossible.
+      - NO_PROXY=localhost,127.0.0.1,0.0.0.0,hermes,open-webui,ollama
     volumes:
       - ollama_models:/root/.ollama
     networks: [net_internal]
@@ -50,7 +53,7 @@ services:
     restart: unless-stopped
     depends_on: [hermes]
     ports:
-      - "3000:8080"                       # SEUL port publié
+      - "127.0.0.1:3000:8080"             # SEUL port publié, bind loopback (démo locale)
     environment:
       - WEBUI_AUTH=true
       - ENABLE_COMMUNITY_FEATURES=false
@@ -72,7 +75,11 @@ services:
       # L'ingestion (upload manuel dans la collection Knowledge) écrit dans
       # le volume open-webui ci-dessus, PAS ici : /data reste ro.
       - ./data:/data:ro
-    networks: [net_internal]
+    # net_internal : joint hermes/ollama (sans internet). net_publish : permet
+    # SEULEMENT la publication du port 3000 vers l'hôte (un réseau internal ne
+    # peut pas publier de port). Masquerade OFF sur net_publish => aucune route
+    # internet directe fonctionnelle ; egress-proxy reste le seul chemin sortant.
+    networks: [net_internal, net_publish]
 
   egress-proxy:
     build: ./proxy
@@ -88,6 +95,13 @@ networks:
     internal: true
   net_egress:
     driver: bridge
+  # Réseau à seule fin de publier open-webui:3000 vers l'hôte. Masquerade
+  # désactivé : ingress (host -> conteneur) OK, mais pas de SNAT donc pas
+  # d'egress internet direct qui fonctionne. Ne PAS y attacher ollama/hermes.
+  net_publish:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
 
 volumes:
   ollama_models:

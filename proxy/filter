@@ -3,6 +3,9 @@
 ^ollama\.com$
 # huggingface.co et ses sous-domaines (ex. cdn-lfs.huggingface.co) — regex ancrée
 ^([a-z0-9-]+\.)?huggingface\.co$
+# hf.co : CDN/Xet où HF sert les fichiers modèles (ex. us.aws.cdn.hf.co,
+# cas-bridge.xethub.hf.co). Sous-domaines multi-labels -> point autorisé. Ancrée.
+^([a-z0-9.-]+\.)?hf\.co$
 # DuckDuckGo (web search Open WebUI) — confirmer les domaines exacts au 1er run
 ^duckduckgo\.com$
 ^html\.duckduckgo\.com$
