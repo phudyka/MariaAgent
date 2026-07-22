@@ -7,8 +7,10 @@ Réponds en français dans ce dépôt (projet francophone, ETS Maria).
 
 ## Ce qu'est ce dépôt
 
-Démo d'**agent commercial sécurisé** : rédaction de brouillons de mails (réponse
-client, relance devis, mail libre) pour ETS Maria (pisciniste).
+Démo d'**agent commercial sécurisé** : génération de devis d'installation de
+filtration (dimensionnement par abaque pré-calculé) et, en secondaire,
+brouillons de mails (réponse client, relance devis, mail libre) pour ETS Maria
+(pisciniste).
 Interface/RAG/orchestration en local via Docker ; **inférence via l'API
 Mistral** (free tier, `mistral-small-latest` 24B Apache 2.0) — modèle choisi
 pour être exactement ce qu'un Mac mini (M4 Pro 48 Go, cible d'achat) fera
@@ -36,8 +38,13 @@ docker build -t hermes-agent:local ~/.local/opt/hermes-agent
 # MISTRAL_API_KEY), up, checklist. Plus aucun pull de modèle par défaut.
 ./setup.sh
 
-# Éval anti-invention (2 cas : prix absent -> [À COMPLÉTER], délai non inventé)
+# Éval anti-invention (4 cas : prix absent, délai non inventé, devis sans
+# volume -> question, devis sans abaque -> zéro réf/prix de mémoire)
 ./eval.sh
+
+# Régénérer l'abaque de dimensionnement (one-shot, poste dev — moteur Peep
+# requis dans ../Peep ; jamais exécuté chez Maria)
+npx -y tsx tools/gen-abaque.ts > data/abaque-filtration.md
 
 docker compose logs -f hermes          # logs d'un service
 docker compose down                    # arrêt
@@ -107,6 +114,14 @@ Points qui demandent de lire plusieurs fichiers pour être compris :
    le conteneur `open-webui`, sans contexte injecté. Il teste donc le
    comportement anti-invention du modèle _seul_ (doit produire `[À COMPLÉTER]`,
    ne pas inventer prix/délai), pas la qualité du RAG.
+
+5. **Le dimensionnement est pré-calculé, jamais calculé par le modèle.**
+   `data/abaque-filtration.md` est généré par `tools/gen-abaque.ts` depuis le
+   moteur hydraulique de `../Peep` (logique provisoire, à faire valider par
+   Maria — formule puissance pompe connue fausse, sélection par débit
+   catalogue à la place). Le modèle recopie une tranche, totaux compris.
+   Corriger la logique = éditer Peep/`PARAMS`, régénérer, ré-uploader dans
+   Knowledge — ni le skill ni SOUL ne bougent.
 
 ## Invariants de sécurité — ne pas casser
 

@@ -166,6 +166,28 @@ collection Knowledge « Maria » pointée sur `data/`, web search activé.
 
 ## Scénario de démo
 
+### Démo devis filtration (tâche principale)
+
+L'agent produit un devis d'installation complète (pompe + filtre + pièces)
+depuis l'abaque de dimensionnement. Pré-requis : uploader
+`data/abaque-filtration.md` et `data/catalogue.md` (ré-upload si déjà présent)
+dans la collection « Knowledge » d'Open WebUI.
+
+Requêtes de démo :
+
+- _« Devis filtration pour une piscine 8 × 4 m, profondeur 1,2 à 1,8 m, client
+  M. Durand »_ → devis complet tranche 41–50 m³, MO et tuyauterie à compléter.
+- _« Fais-moi un devis filtration »_ → l'agent demande le volume.
+- _« Piscine à débordement de 120 m³ »_ → orientation étude atelier, zéro
+  chiffre.
+
+L'abaque est GÉNÉRÉ (`npx -y tsx tools/gen-abaque.ts > data/abaque-filtration.md`)
+depuis le moteur hydraulique du prototype Peep (dépôt frère `../Peep`), jamais
+exécuté en production. Dimensionnement provisoire : quand Maria corrige la
+logique, éditer `PARAMS`/le moteur, régénérer, ré-uploader.
+
+### Démo mails
+
 1. _« Relance le devis 2024-118 du client Durand. »_ → le RAG sort la fiche
    Durand + le devis 2024-118 + les derniers mails → brouillon en texte brut,
    montant et références **réels cités** depuis les données.
