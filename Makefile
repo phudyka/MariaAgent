@@ -29,9 +29,9 @@ info: ## Rappels : URL et accès (seul port publié)
 down: ## Arrêter la stack
 	docker compose down
 
-seal-check: ## Vérif étanchéité réseau (doit confirmer que la résolution DNS échoue)
-	@docker compose exec -T $(SVC) nslookup registry.ollama.ai >/dev/null 2>&1 \
-	  && { echo "FUITE DNS : la résolution a réussi (ne devrait PAS)"; exit 1; } \
-	  || echo "OK : étanchéité confirmée (résolution DNS échoue)"
+seal-check: ## Vérif étanchéité réseau (la socket sortante doit échouer)
+	@docker compose exec -T $(SVC) python3 -c "import socket; socket.create_connection(('1.1.1.1',443),timeout=5)" >/dev/null 2>&1 \
+	  && { echo "FUITE : connexion sortante réussie (ne devrait PAS)"; exit 1; } \
+	  || echo "OK : étanchéité confirmée (socket sortante refusée)"
 
 .PHONY: help build deploy eval logs ps down seal-check info

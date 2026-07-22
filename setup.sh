@@ -30,14 +30,17 @@ cat <<'EOF'
 
 === Préconfiguration Open WebUI (http://localhost:3000) ===
 1. Créer le compte de service (première connexion = admin).
-2. Workspace > Models > créer "maria-agent" :
+2. Workspace > Models > créer "Maria — catalogue" :
    - Base model : maria-agent (gateway Hermes, déjà listé)
-   - System prompt : coller le contenu de hermes/SOUL.md
-3. Workspace > Knowledge > "Maria" > uploader tout le dossier data/
-   (source disponible en lecture seule dans le conteneur sous /data ;
+   - System prompt : laisser VIDE (la persona SOUL.md est appliquée
+     par le gateway Hermes, pas par l'UI).
+3. Workspace > Knowledge > "Maria" > uploader data/ SAUF
+   inbox/06-injection-test.eml (jamais dans le RAG) ; CSV optionnels.
+   (source en lecture seule dans le conteneur sous /data ;
    l'upload lui-même se fait manuellement via l'UI).
-4. Rattacher la collection "Maria" au modèle "maria-agent".
-5. Settings > Web Search : activé (déjà via env), moteur duckduckgo.
+4. Rattacher la collection "Maria" au modèle "Maria — catalogue".
+5. Admin Panel > Settings > Web Search : vérifier activé + duckduckgo
+   (la valeur persistée en DB prime sur les env après le 1er boot).
 
 === Boîte mail de démo (Mailpit) — http://127.0.0.1:8025 ===
 - Inbox factice contact@ets-maria.fr, seedée depuis data/inbox/*.eml.

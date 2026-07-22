@@ -13,6 +13,9 @@ services:
       - OLLAMA_CONTEXT_LENGTH=65536
       - OLLAMA_FLASH_ATTENTION=1
       - OLLAMA_KV_CACHE_TYPE=q4_0
+      # Modèle résident en VRAM en permanence : évite le cold-start (~10-20 s)
+      # au premier prompt après une pause (défaut keep_alive = 5 min).
+      - OLLAMA_KEEP_ALIVE=-1
       # ollama pull passe par le seul canal egress autorisé (registre Ollama).
       - HTTP_PROXY=http://egress-proxy:8888
       - HTTPS_PROXY=http://egress-proxy:8888
@@ -83,8 +86,10 @@ services:
     networks: [net_internal, net_publish]
 
   # --- Outil de DÉMO (hors produit) : boîte mail factice locale. ---
-  # Simule un vrai service mail (SMTP + webmail) SANS egress : net_internal
-  # (internal:true) + net_publish (masquerade off) => aucune route internet.
+  # Simule un vrai service mail (SMTP + webmail). Aucune route internet DIRECTE
+  # (net_internal internal:true + net_publish masquerade off) ; comme tout
+  # service de net_internal, il ne pourrait sortir que via egress-proxy
+  # (allowlist default-deny) — et n'initie aucune connexion.
   # Ports publiés en loopback UNIQUEMENT, jamais LAN. Maria ne s'y connecte pas
   # (toolset figé) : un humain lit l'inbox et colle le mail dans l'agent.
   mailpit:

@@ -1,5 +1,5 @@
 ^registry\.ollama\.ai$
-\.ollama\.ai$
+^([a-z0-9-]+\.)+ollama\.ai$
 ^ollama\.com$
 # huggingface.co et ses sous-domaines (ex. cdn-lfs.huggingface.co) — regex ancrée
 ^([a-z0-9-]+\.)?huggingface\.co$

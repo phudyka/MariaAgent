@@ -14,16 +14,19 @@ une injection de prompt ; même un modèle entièrement compromis ne doit avoir
 
 ## Stack
 
-| Conteneur      | Rôle                                                        | Réseau                        | Port publié |
-| -------------- | ----------------------------------------------------------- | ----------------------------- | ----------- |
-| `ollama`       | Sert le modèle local (`qwen3:4b-instruct-2507-q4_K_M`), GPU | `net_internal`                | aucun       |
-| `hermes`       | Gateway orchestrateur (API OpenAI-compatible)               | `net_internal`                | aucun       |
-| `open-webui`   | Interface employés, RAG natif + web search                  | `net_internal`                | **3000**    |
-| `egress-proxy` | Unique sortie internet (tinyproxy, allowlist)               | `net_internal` + `net_egress` | aucun       |
+| Conteneur      | Rôle                                                        | Réseau                         | Port publié               |
+| -------------- | ----------------------------------------------------------- | ------------------------------ | ------------------------- |
+| `ollama`       | Sert le modèle local (`qwen3:4b-instruct-2507-q4_K_M`), GPU | `net_internal`                 | aucun                     |
+| `hermes`       | Gateway orchestrateur (API OpenAI-compatible)               | `net_internal`                 | aucun                     |
+| `open-webui`   | Interface employés, RAG natif + web search                  | `net_internal`                 | **3000**                  |
+| `egress-proxy` | Unique sortie internet (tinyproxy, allowlist)               | `net_internal` + `net_egress`  | aucun                     |
+| `mailpit`      | Boîte mail factice (démo, hors produit) — `seed-inbox.sh`   | `net_internal` + `net_publish` | 8025/1025 (loopback seul) |
 
-**Un seul port est publié sur l'hôte : `open-webui` → `3000`**, derrière
+**Un seul port PRODUIT est publié sur l'hôte : `open-webui` → `3000`**, derrière
 `WEBUI_AUTH`. `hermes` n'est **jamais** exposé au LAN — Open WebUI le joint en
-interne sur `net_internal`. Ollama n'est pas non plus publié.
+interne sur `net_internal`. Ollama n'est pas non plus publié. Exception démo
+assumée : `mailpit` (outil de démo, hors produit) publie son webmail/SMTP en
+loopback seul, jamais LAN ; l'inbox se seed via `./seed-inbox.sh`.
 
 Le métier (persona + règles anti-invention) vit dans `~/.hermes` : `SOUL.md` +
 `skills/mails-commerciaux`. Aucun code proxy custom : le RAG est natif Open
@@ -75,7 +78,8 @@ Deux réseaux Docker :
    n'est **pas** un invariant `:ro` à ce stade. L'ingestion read-only
    automatisée est une piste de durcissement documentée dans
    [`docs/superpowers/specs/2026-07-20-securite-prod.md`](docs/superpowers/specs/2026-07-20-securite-prod.md).
-5. Toolset du modèle inchangé : `[skills, todo, memory]`. **Aucun** tool
+5. Toolset du modèle **vide** (`api_server: []`) : zéro tool, zéro surface
+   d'injection — les règles vivent dans le persona. **Aucun** tool
    `web`/`file`/`terminal` donné au modèle. Le web est fetché par Open WebUI,
    jamais par un tool que l'injection pourrait détourner.
 
@@ -112,7 +116,8 @@ L'embedding model se pull une fois via `egress-proxy` (allowlist).
 cp .env.example .env
 # éditer .env : MARIA_API_KEY=$(openssl rand -hex 24)
 
-# 2. Build de l'image Hermes (depuis l'install git locale)
+# 2. Build de l'image Hermes (depuis l'install git locale — adapter le chemin
+#    si l'install n'est pas/plus dans ~/.local/opt/hermes-agent)
 docker build -t hermes-agent:local ~/.local/opt/hermes-agent
 
 # 3. Setup : fail-fast clé, up de la stack, pull du modèle, checklist finale
@@ -129,7 +134,8 @@ passent par `egress-proxy`, strictement allowlisté.
 
 Une fois `setup.sh` terminé, ouvrir **http://localhost:3000**, créer le compte
 de service (première connexion = admin), puis suivre la checklist affichée en
-fin de script : modèle `maria-agent` (system prompt = `hermes/SOUL.md`),
+fin de script : modèle « Maria — catalogue » (base : `maria-agent`, system
+prompt vide — la persona `SOUL.md` est appliquée par le gateway Hermes),
 collection Knowledge « Maria » pointée sur `data/`, web search activé.
 
 > Vérification bring-up recommandée : confirmer l'absence de route sortante
@@ -154,6 +160,8 @@ collection Knowledge « Maria » pointée sur `data/`, web search activé.
    aussi `./eval.sh`).
 3. _« Vérifie la dispo de la pièce X chez le fournisseur. »_ → web contrôlé,
    seul le domaine fournisseur allowlisté (`proxy/filter`) est joignable.
+   (Préalable : Web Search activé dans Admin Panel > Settings — réglage persisté
+   en DB, les env ne suffisent pas après le 1er boot.)
 4. Montrer la topologie ci-dessus : le modèle **n'a aucune route réseau** pour
    fuir les données, même retourné par une injection.
 

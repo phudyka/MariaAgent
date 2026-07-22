@@ -47,11 +47,15 @@ agent:
 # (client, devis, catalogue, mails) est injecté par le RAG natif d'Open WebUI,
 # pas par un tool donné au modèle. On ne donne AUCUN tool web/file/terminal au
 # modèle : un mail client collé peut contenir une injection de prompt.
+# [] = zéro tool, zéro surface d'injection : les règles vivent dans SOUL.md.
+# Élargissement maximal toléré : [skills, todo, memory] — et SEULEMENT si
+# ~/.hermes/skills ne contient que les skills du projet (un ~/.hermes partagé
+# avec un usage perso exposerait tous ses skills au modèle).
 # Ne jamais élargir api_server à [terminal, file, web].
 # cli = accès complet pour l'administrateur en local.
 platform_toolsets:
   cli: [hermes-cli]
-  api_server: [skills, todo, memory]
+  api_server: []
 
 platforms:
   api_server:

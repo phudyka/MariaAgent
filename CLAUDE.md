@@ -69,10 +69,14 @@ Points qui demandent de lire plusieurs fichiers pour être compris :
 
 2. **Le RAG n'est pas un tool du modèle.** C'est Open WebUI qui embed les
    données et injecte le contexte _avant_ d'appeler Hermes. Le toolset du modèle
-   est volontairement `[skills, todo, memory]` (voir
-   `hermes/config.yaml.example`, `platform_toolsets.api_server`). Aucun tool
+   est volontairement **vide** (`api_server: []`, voir
+   `hermes/config.yaml.example`, `platform_toolsets.api_server`) : zéro tool,
+   zéro surface — les règles métier vivent dans SOUL.md. Aucun tool
    `web`/`file`/`terminal` : une injection n'a rien à détourner. **Ne jamais
-   élargir ce toolset.**
+   élargir ce toolset.** (Maximum toléré : `[skills, todo, memory]`, et
+   seulement si `~/.hermes/skills` ne contient que les skills du projet — un
+   `~/.hermes` partagé avec un usage perso exposerait tous ses skills au
+   modèle.)
 
 3. **`data/` est monté `:ro` mais n'est pas la base interrogée.** Les fichiers
    sont uploadés _manuellement_ via l'UI dans la collection « Knowledge » (store
@@ -92,8 +96,9 @@ Ces propriétés sont le cœur de la démo. Toute modif du `docker-compose.yml`,
 - **Un seul port produit publié** : `open-webui:3000`, derrière `WEBUI_AUTH`.
   `hermes` et `ollama` ne sont **jamais** exposés à l'hôte/LAN. (Exception démo
   assumée : `mailpit` publie `8025`/`1025` en **loopback seul** — outil de démo
-  hors produit, sur `net_publish` masquerade off = aucun egress ; Maria ne s'y
-  connecte pas, toolset figé.)
+  hors produit ; aucune route internet directe, et comme tout service de
+  `net_internal` il ne pourrait sortir que via l'egress-proxy allowlisté ; Maria
+  ne s'y connecte pas, toolset figé.)
 - **`net_internal` est `internal: true`** (aucune route internet directe).
   `egress-proxy` est le **seul** service sur `net_egress`, donc le seul chemin
   vers internet. Tout passe par lui via `HTTP_PROXY`.
@@ -101,7 +106,7 @@ Ces propriétés sont le cœur de la démo. Toute modif du `docker-compose.yml`,
   Ollama, huggingface (embedding model), DuckDuckGo (web search), domaine(s)
   fournisseur. Ajouter un domaine = élargir la surface de fuite — le justifier.
   Regex **ancrées** (`^…$`) obligatoires.
-- **Toolset `api_server` figé** à `[skills, todo, memory]` (cf. point 2).
+- **Toolset `api_server` figé** à `[]` (cf. point 2).
 
 ## Persona & règles métier
 
