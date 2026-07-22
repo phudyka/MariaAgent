@@ -9,8 +9,6 @@ import json, urllib.request
 payload = json.dumps({
     'model': 'maria-agent',
     'messages': [{'role': 'user', 'content': '''$1'''}],
-    'temperature': 0,   # greedy -> éval déterministe (Hermes forwarde la temp de requête ;
-                        # model.temperature en config.yaml est IGNORÉ, cf. auxiliary_client)
 }).encode()
 
 req = urllib.request.Request(
