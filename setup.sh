@@ -8,6 +8,13 @@ if grep -Eq '^[[:space:]]*MARIA_API_KEY[[:space:]]*=[[:space:]]*["'"'"']?change-
   echo "  Générer : openssl rand -hex 24, puis coller dans .env"
   exit 1
 fi
+# Clé Mistral (inférence cloud) : absente, vide ou placeholder => refus.
+if ! grep -Eq '^[[:space:]]*MISTRAL_API_KEY[[:space:]]*=[[:space:]]*["'"'"']?[A-Za-z0-9_-]+["'"'"']?[[:space:]]*$' .env \
+   || grep -Eq '^[[:space:]]*MISTRAL_API_KEY[[:space:]]*=[[:space:]]*["'"'"']?change-me["'"'"']?[[:space:]]*$' .env; then
+  echo "ERREUR : MISTRAL_API_KEY absente, vide ou encore 'change-me' dans .env."
+  echo "  Créer une clé (free tier) : https://console.mistral.ai → API Keys, puis coller dans .env"
+  exit 1
+fi
 
 # 2. Config Hermes en place (montée dans le conteneur)
 mkdir -p "$HOME/.hermes/skills"
@@ -18,9 +25,9 @@ cp -r hermes/skills/mails-commerciaux "$HOME/.hermes/skills/"
 # 3. Démarrer la stack
 docker compose up -d
 
-# 4. Pull du modèle (via egress-proxy, allowlist registre Ollama)
-echo "Pull du modèle (une fois, ~2-4 Go)…"
-docker compose exec ollama ollama pull qwen3:4b-instruct-2507-q4_K_M
+# 4. Inférence : API Mistral via egress-proxy (rien à puller).
+#    Retour 100 % local (futur Mac mini) : COMPOSE_PROFILES=local docker
+#    compose up -d, ollama pull <modèle>, repointer ~/.hermes/config.yaml.
 
 # 5. Seed de la boîte mail de démo (Mailpit) avec data/inbox/*.eml
 echo "Seed de l'inbox de démo (Mailpit)…"

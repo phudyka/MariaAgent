@@ -1,14 +1,22 @@
-# Agent commercial local ETS Maria — démo RAG sécurisée locale.
-# Sécurité par la topologie : ollama/hermes/open-webui sur net_internal
-# (internal: true, aucune route internet directe). egress-proxy est le SEUL
-# pont vers internet, restreint par allowlist. Seul port PRODUIT : open-webui:3000
-# (mailpit = boîte mail factice de démo, ports loopback aux, hors périmètre produit).
+# Agent commercial ETS Maria — démo RAG sécurisée.
+# Sécurité par la topologie : hermes/open-webui sur net_internal (internal:
+# true, aucune route internet directe). egress-proxy est le SEUL pont vers
+# internet, restreint par allowlist ancrée — y compris l'inférence (API
+# Mistral) qui ne peut sortir que par lui. Seul port PRODUIT : open-webui:3000
+# (mailpit = boîte mail factice de démo, ports loopback, hors périmètre produit).
+# ollama (profil "local") : arrêté par défaut, réactivable pour le retour
+# 100 % local (futur Mac mini).
 
 services:
   ollama:
     image: ollama/ollama:0.6.8
     container_name: maria-ollama
     restart: unless-stopped
+    # Inférence locale (démo v1) — hors du démarrage par défaut depuis la
+    # bascule API Mistral. Réactiver : COMPOSE_PROFILES=local docker compose
+    # up -d, puis repointer ~/.hermes/config.yaml (provider ollama,
+    # base_url http://ollama:11434/v1, api_key ollama-local).
+    profiles: ["local"]
     environment:
       - OLLAMA_CONTEXT_LENGTH=65536
       - OLLAMA_FLASH_ATTENTION=1
@@ -38,7 +46,6 @@ services:
     image: hermes-agent:local
     container_name: maria-hermes
     restart: unless-stopped
-    depends_on: [ollama]
     volumes:
       - ~/.hermes:/opt/data
     environment:
@@ -48,6 +55,14 @@ services:
       # Aucun port publié + réseau sans egress => pas une exposition.
       - API_SERVER_HOST=0.0.0.0
       - API_SERVER_KEY=${MARIA_API_KEY:?MARIA_API_KEY manquante — copier .env.example vers .env}
+      # Inférence cloud : API Mistral (free tier). Hermes dérive la clé de
+      # l'env depuis base_url (api.mistral.ai -> MISTRAL_API_KEY) ; aucun
+      # secret dans ~/.hermes/config.yaml.
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:?MISTRAL_API_KEY manquante — voir .env.example (console.mistral.ai)}
+      # Seule sortie réseau possible : egress-proxy (allowlist api.mistral.ai).
+      - HTTP_PROXY=http://egress-proxy:8888
+      - HTTPS_PROXY=http://egress-proxy:8888
+      - NO_PROXY=localhost,127.0.0.1,open-webui,ollama
     command: ["gateway", "run"]
     networks: [net_internal]
 

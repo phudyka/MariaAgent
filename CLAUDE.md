@@ -7,12 +7,19 @@ Réponds en français dans ce dépôt (projet francophone, ETS Maria).
 
 ## Ce qu'est ce dépôt
 
-Démo d'**agent commercial local sécurisé** : rédaction de brouillons de mails
-(réponse client, relance devis, mail libre) pour ETS Maria (pisciniste). Tout
-tourne en local via Docker — aucune inférence externe. Ce n'est pas du code
-applicatif : c'est de la **configuration d'infrastructure** (compose, proxy,
-persona, données mock). Le « produit » est la topologie sécurisée + le persona,
-pas un service qu'on développe.
+Démo d'**agent commercial sécurisé** : rédaction de brouillons de mails (réponse
+client, relance devis, mail libre) pour ETS Maria (pisciniste).
+Interface/RAG/orchestration en local via Docker ; **inférence via l'API
+Mistral** (free tier, `mistral-small-latest` 24B Apache 2.0) — modèle choisi
+pour être exactement ce qu'un Mac mini (M4 Pro 48 Go, cible d'achat) fera
+tourner en local via Ollama ; tester la cible 24 Go = `open-mistral-nemo` (12B),
+bascule 1 ligne dans `~/.hermes/config.yaml`. `api.mistral.ai` est le seul
+domaine d'inférence de l'allowlist. Mode 100 % local v1 : profil compose `local`
+(ollama). Ce n'est pas du code applicatif : c'est de la **configuration
+d'infrastructure** (compose, proxy, persona, données mock). Le « produit » est
+la topologie sécurisée + le persona, pas un service qu'on développe. Free tier
+Mistral = requêtes utilisables pour l'entraînement : données de démo seulement,
+jamais de vrais mails clients.
 
 Principe directeur, présent partout : **on ne fait pas confiance au modèle, on
 contrôle ses capacités au niveau de l'infra.** Un mail client collé peut
@@ -25,7 +32,8 @@ chemin réseau pour exfiltrer des données.
 # Build de l'image Hermes (préalable, depuis l'install git locale)
 docker build -t hermes-agent:local ~/.local/opt/hermes-agent
 
-# SEUL point d'entrée pour démarrer : fail-fast clé, up, pull modèle, checklist
+# SEUL point d'entrée pour démarrer : fail-fast clés (MARIA_API_KEY,
+# MISTRAL_API_KEY), up, checklist. Plus aucun pull de modèle par défaut.
 ./setup.sh
 
 # Éval anti-invention (2 cas : prix absent -> [À COMPLÉTER], délai non inventé)
@@ -36,8 +44,14 @@ docker compose down                    # arrêt
 ```
 
 **Ne jamais démarrer par `docker compose up -d` seul** — il saute le garde-fou
-clé et démarrerait avec `MARIA_API_KEY=change-me-in-prod`. Toujours
-`./setup.sh`.
+clés et démarrerait avec `MARIA_API_KEY=change-me-in-prod` ou une
+`MISTRAL_API_KEY` placeholder. Toujours `./setup.sh`.
+
+Retour au mode 100 % local (futur Mac mini) :
+`COMPOSE_PROFILES=local docker
+compose up -d`, `ollama pull <modèle>`, puis
+repointer `~/.hermes/config.yaml` (provider `ollama`,
+`base_url http://ollama:11434/v1`, `api_key ollama-local`).
 
 Vérif d'étanchéité réseau (doit **échouer**, sinon fuite). `nslookup` n'est pas
 dans l'image `hermes` — tester la socket sortante directement :
@@ -50,12 +64,18 @@ docker compose exec hermes python3 -c \
 
 ## Architecture (le non-évident)
 
-Quatre conteneurs, deux réseaux. Flux d'une requête employé :
+Flux d'une requête employé :
 
 ```
 employé :3000 → open-webui (embed + retrieve top-k RAG, injecte le contexte)
-             → hermes:8642/v1 (gateway, persona + skills) → ollama:11434 (modèle)
+             → hermes:8642/v1 (gateway, persona + skills)
+             → api.mistral.ai/v1 (inférence, via egress-proxy allowlisté)
 ```
+
+La clé Mistral n'est **pas** dans `~/.hermes/config.yaml` : Hermes la dérive de
+l'env `MISTRAL_API_KEY` (host-derived depuis `base_url`), injectée par compose
+depuis `.env`. Les appels sortants d'Hermes respectent `HTTPS_PROXY`/`NO_PROXY`
+→ tout passe par l'egress-proxy.
 
 Points qui demandent de lire plusieurs fichiers pour être compris :
 
@@ -102,10 +122,10 @@ Ces propriétés sont le cœur de la démo. Toute modif du `docker-compose.yml`,
 - **`net_internal` est `internal: true`** (aucune route internet directe).
   `egress-proxy` est le **seul** service sur `net_egress`, donc le seul chemin
   vers internet. Tout passe par lui via `HTTP_PROXY`.
-- **`proxy/filter` est une allowlist** (`FilterDefaultDeny Yes`) : registre
-  Ollama, huggingface (embedding model), DuckDuckGo (web search), domaine(s)
-  fournisseur. Ajouter un domaine = élargir la surface de fuite — le justifier.
-  Regex **ancrées** (`^…$`) obligatoires.
+- **`proxy/filter` est une allowlist** (`FilterDefaultDeny Yes`) :
+  `api.mistral.ai` (inférence), registre Ollama, huggingface (embedding model),
+  DuckDuckGo (web search), domaine(s) fournisseur. Ajouter un domaine = élargir
+  la surface de fuite — le justifier. Regex **ancrées** (`^…$`) obligatoires.
 - **Toolset `api_server` figé** à `[]` (cf. point 2).
 
 ## Persona & règles métier

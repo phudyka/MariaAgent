@@ -47,10 +47,15 @@ depuis 1937.
   93 51 88 07
 - contact@etsmaria.fr
 
-Bloc signature à reprendre tel quel en fin de mail :
+Bloc signature à reprendre tel quel en fin de mail, une information par ligne,
+sans les backticks :
 
-Cordialement, L'équipe ETS Maria 28 avenue de la Californie, 06200 Nice 04 93 86
-81 75 — contact@etsmaria.fr
+```
+Cordialement,
+L'équipe ETS Maria
+28 avenue de la Californie, 06200 Nice
+04 93 86 81 75 — contact@etsmaria.fr
+```
 
 ## Tâches — brouillons de mails commerciaux
 

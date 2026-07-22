@@ -1,32 +1,42 @@
 # Agent commercial local ETS Maria — démo RAG sécurisée
 
 Agent de rédaction de mails commerciaux (réponse client, relance devis, mail
-libre) pour ETS Maria (pisciniste, région niçoise, depuis 1937), **100 % local**
-: modèle servi par Ollama, orchestré par Hermes, exposé aux employés via Open
-WebUI, avec accès en lecture à des données d'entreprise mockées via RAG. Aucune
-inférence externe, aucune donnée qui sort sans passer par un canal contrôlé et
-audité.
+libre) pour ETS Maria (pisciniste, région niçoise, depuis 1937). Interface, RAG
+et orchestration tournent en local (Hermes + Open WebUI) ; l'inférence passe par
+l'**API Mistral** (free tier) : `mistral-small-latest`, modèle **open-weights
+Apache 2.0 (24B)** choisi pour être exactement ce qu'un Mac mini (M4 Pro 48 Go,
+cible d'achat) fera tourner en local via Ollama — même persona, mêmes poids,
+seule l'URL changera. Aucune donnée ne sort sans passer par l'unique canal
+contrôlé et allowlisté (`api.mistral.ai` seul domaine d'inférence autorisé). Le
+mode 100 % local de la v1 (Ollama) reste disponible via le profil compose
+`local`.
 
 Principe directeur : **on ne fait pas confiance au modèle, on contrôle ses
 capacités au niveau de l'infrastructure.** Un mail client collé peut contenir
 une injection de prompt ; même un modèle entièrement compromis ne doit avoir
 **aucun chemin** pour exfiltrer des données.
 
+> **Free tier Mistral** : les requêtes peuvent être utilisées pour
+> l'entraînement. Données de démo uniquement — **jamais de vrais mails
+> clients**. (Passage en prod : tier payant avec opt-out, ou retour 100 % local
+> sur le Mac mini.)
+
 ## Stack
 
-| Conteneur      | Rôle                                                        | Réseau                         | Port publié               |
-| -------------- | ----------------------------------------------------------- | ------------------------------ | ------------------------- |
-| `ollama`       | Sert le modèle local (`qwen3:4b-instruct-2507-q4_K_M`), GPU | `net_internal`                 | aucun                     |
-| `hermes`       | Gateway orchestrateur (API OpenAI-compatible)               | `net_internal`                 | aucun                     |
-| `open-webui`   | Interface employés, RAG natif + web search                  | `net_internal`                 | **3000**                  |
-| `egress-proxy` | Unique sortie internet (tinyproxy, allowlist)               | `net_internal` + `net_egress`  | aucun                     |
-| `mailpit`      | Boîte mail factice (démo, hors produit) — `seed-inbox.sh`   | `net_internal` + `net_publish` | 8025/1025 (loopback seul) |
+| Conteneur      | Rôle                                                       | Réseau                         | Port publié               |
+| -------------- | ---------------------------------------------------------- | ------------------------------ | ------------------------- |
+| `hermes`       | Gateway orchestrateur → inférence API Mistral (via egress) | `net_internal`                 | aucun                     |
+| `ollama`       | Inférence locale v1 — profil `local`, arrêté par défaut    | `net_internal`                 | aucun                     |
+| `open-webui`   | Interface employés, RAG natif + web search                 | `net_internal`                 | **3000**                  |
+| `egress-proxy` | Unique sortie internet (tinyproxy, allowlist)              | `net_internal` + `net_egress`  | aucun                     |
+| `mailpit`      | Boîte mail factice (démo, hors produit) — `seed-inbox.sh`  | `net_internal` + `net_publish` | 8025/1025 (loopback seul) |
 
 **Un seul port PRODUIT est publié sur l'hôte : `open-webui` → `3000`**, derrière
 `WEBUI_AUTH`. `hermes` n'est **jamais** exposé au LAN — Open WebUI le joint en
-interne sur `net_internal`. Ollama n'est pas non plus publié. Exception démo
-assumée : `mailpit` (outil de démo, hors produit) publie son webmail/SMTP en
-loopback seul, jamais LAN ; l'inbox se seed via `./seed-inbox.sh`.
+interne sur `net_internal`. `ollama` (profil `local`, arrêté par défaut) n'est
+pas non plus publié. Exception démo assumée : `mailpit` (outil de démo, hors
+produit) publie son webmail/SMTP en loopback seul, jamais LAN ; l'inbox se seed
+via `./seed-inbox.sh`.
 
 Le métier (persona + règles anti-invention) vit dans `~/.hermes` : `SOUL.md` +
 `skills/mails-commerciaux`. Aucun code proxy custom : le RAG est natif Open
@@ -44,18 +54,18 @@ WebUI.
   (internal:true)  │      │
      ┌─────────────┴┐   ┌─┴──────────────┐
      │              │   │                │
-┌────▼───┐   ┌──────▼┐  │          ┌─────▼───────┐
-│ ollama │   │hermes │  └─────────►│ egress-proxy │──► internet
-│ (GPU)  │◄──│gateway│   HTTP_PROXY │  (allowlist) │    (domaines
-└────────┘   └───────┘              └──────────────┘     autorisés SEULS)
- no egress    no egress
+┌────▼───┐          │   │          ┌─────▼───────┐
+│ hermes │──────────┴───┴─────────►│ egress-proxy │──► internet
+│gateway │  HTTPS_PROXY (inférence │  (allowlist) │    (api.mistral.ai +
+└────────┘   API Mistral)          └──────────────┘     domaines listés SEULS)
+ no egress direct   (ollama : profil `local`, arrêté par défaut, pas dessiné)
 ```
 
 Deux réseaux Docker :
 
 - `net_internal` (`internal: true`) : **aucune route directe vers internet**.
-  Héberge `ollama`, `hermes`, `open-webui`, et l'interface interne
-  d'`egress-proxy`.
+  Héberge `hermes`, `open-webui` (et `ollama` quand le profil `local` est
+  activé), plus l'interface interne d'`egress-proxy`.
 - `net_egress` (bridge, avec accès internet) : **seul** `egress-proxy` y est
   connecté.
 
@@ -64,10 +74,11 @@ Deux réseaux Docker :
 1. **Aucun conteneur n'a d'egress direct.** L'unique chemin vers internet est
    `egress-proxy`, et il n'autorise que les domaines de l'allowlist (tinyproxy,
    ~10 lignes de conf). C'est du câblage, pas de la confiance.
-2. `ollama` et `hermes` ne sont que sur `net_internal`. Leur seul usage
-   d'internet est **via** `egress-proxy` (`HTTP_PROXY`), strictement allowlisté
-   : `ollama` pour **pull le modèle** depuis le registre Ollama (setup),
-   `hermes` n'en a **aucun** besoin. Toute destination hors allowlist est
+2. `hermes` (et `ollama` en profil `local`) ne sont que sur `net_internal`. Leur
+   seul usage d'internet est **via** `egress-proxy`
+   (`HTTP_PROXY`/`HTTPS_PROXY`), strictement allowlisté : `hermes` vers
+   `api.mistral.ai` (inférence) et rien d'autre ; `ollama` vers le registre
+   Ollama (pull, profil `local` seulement). Toute destination hors allowlist est
    refusée → exfiltration impossible, même modèle retourné par une injection.
 3. **Un seul port publié** : `open-webui:3000`, derrière `WEBUI_AUTH`. `hermes`
    n'est **pas** exposé au LAN — Open WebUI le joint par `net_internal`.
@@ -112,21 +123,23 @@ L'embedding model se pull une fois via `egress-proxy` (allowlist).
 ## Démarrage
 
 ```bash
-# 1. Config : copier le modèle d'env et fixer une vraie clé
+# 1. Config : copier le modèle d'env et fixer les clés
 cp .env.example .env
 # éditer .env : MARIA_API_KEY=$(openssl rand -hex 24)
+#               MISTRAL_API_KEY=<clé free tier créée sur console.mistral.ai>
 
 # 2. Build de l'image Hermes (depuis l'install git locale — adapter le chemin
 #    si l'install n'est pas/plus dans ~/.local/opt/hermes-agent)
 docker build -t hermes-agent:local ~/.local/opt/hermes-agent
 
-# 3. Setup : fail-fast clé, up de la stack, pull du modèle, checklist finale
+# 3. Setup : fail-fast clés, up de la stack, checklist finale
 ./setup.sh
 ```
 
-`setup.sh` échoue immédiatement (fail-fast) si `MARIA_API_KEY` vaut encore sa
-valeur par défaut de `.env.example`. Le pull du modèle et les images Docker
-passent par `egress-proxy`, strictement allowlisté.
+`setup.sh` échoue immédiatement (fail-fast) si `MARIA_API_KEY` ou
+`MISTRAL_API_KEY` valent encore leur valeur par défaut de `.env.example`.
+L'inférence — comme tout flux sortant — passe par `egress-proxy`, strictement
+allowlisté.
 
 > **Important** : `docker compose up -d` lancé seul ne fait **pas** ce contrôle
 > de clé — il démarrerait la stack même avec la clé par défaut. Toujours
@@ -147,8 +160,9 @@ collection Knowledge « Maria » pointée sur `data/`, web search activé.
 > dans
 > [`docs/superpowers/specs/2026-07-20-securite-prod.md`](docs/superpowers/specs/2026-07-20-securite-prod.md).
 
-> GPU : le `docker-compose.yml` réserve un device nvidia pour `ollama`. Sur CPU,
-> retirer le bloc `deploy.resources` — le modèle 4B tournera en CPU.
+> GPU : plus requis par défaut (inférence via API Mistral). Le service `ollama`
+> (profil `local`) garde sa réservation nvidia pour le retour au mode 100 %
+> local.
 
 ## Scénario de démo
 
@@ -180,9 +194,9 @@ pertinentes, aucun `[À COMPLÉTER]` manquant, aucun prix/date inventé) :
   relance devis, mail libre).
 - `data/` : remplacer les mocks par de vraies données (lecture seule),
   ré-uploader dans la collection Knowledge Open WebUI.
-- `proxy/filter` : allowlist de domaines du proxy egress (registre Ollama,
-  source de l'embedding model, domaine(s) fournisseur pour le web search). Rien
-  d'autre ne doit sortir.
+- `proxy/filter` : allowlist de domaines du proxy egress (`api.mistral.ai` pour
+  l'inférence, registre Ollama, source de l'embedding model, domaine(s)
+  fournisseur pour le web search). Rien d'autre ne doit sortir.
 
 ## Durcissement production
 

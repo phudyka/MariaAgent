@@ -1,3 +1,5 @@
+# API Mistral — inférence cloud (bascule post-démo). UN seul endpoint, ancré.
+^api\.mistral\.ai$
 ^registry\.ollama\.ai$
 ^([a-z0-9-]+\.)+ollama\.ai$
 ^ollama\.com$

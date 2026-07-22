@@ -1,21 +1,27 @@
-# Configuration Hermes Agent — ETS Maria (agent local hermétique)
+# Configuration Hermes Agent — ETS Maria (inférence API Mistral, egress scellé)
 # À copier vers ~/.hermes/config.yaml (monté dans le conteneur hermes en `/opt/data`).
 # Remplacer __CLE_API_GATEWAY__ par une clé aléatoire : openssl rand -hex 24
-# Modèle servi par Ollama local. Aucun provider cloud configuré.
+#
+# Inférence : API Mistral (free tier) via l'egress-proxy allowlisté — seul
+# domaine de sortie. mistral-small-latest = Mistral Small 3.2 (24B, Apache
+# 2.0) : même modèle open-weights qu'un Mac mini M4 Pro 48 Go ferait tourner
+# en local (cible d'achat). Tester la cible 24 Go : default: "open-mistral-nemo" (12B).
+# Retour 100 % local (démo v1) : COMPOSE_PROFILES=local, puis provider:
+# "ollama", base_url: "http://ollama:11434/v1", api_key: "ollama-local".
 
 model:
-  default: "qwen3:4b-instruct-2507-q4_K_M"
-  provider: "ollama"                      # alias du provider "custom" (endpoint OpenAI-compatible)
-  base_url: "http://ollama:11434/v1"
-  api_key: "ollama-local"                 # Ollama n'authentifie pas ; le SDK exige une valeur non vide
-  context_length: 65536                   # aligné sur `OLLAMA_CONTEXT_LENGTH`, KV q4_0 + flash attention
-
-providers:
-  ollama-local:
-    request_timeout_seconds: 300          # démarrage à froid du modèle (chargement VRAM/RAM)
+  default: "mistral-small-latest"
+  provider: "custom"                      # endpoint OpenAI-compatible générique
+  base_url: "https://api.mistral.ai/v1"
+  # PAS d'api_key ici : Hermes la dérive de l'env MISTRAL_API_KEY
+  # (host-derived depuis base_url), injectée par docker-compose depuis .env.
+  # Aucun secret dans ce fichier.
+  context_length: 131072                  # fenêtre réelle de Mistral Small 3.2 (128K).
+                                          # Hermes exige >= 64K — ne pas descendre en dessous.
 
 # Tâches auxiliaires (compression de contexte, résumé de sessions) : tout sur
-# l'endpoint local. Jamais OpenRouter/Nous Portal — contrainte hermétique.
+# l'endpoint principal (Mistral). Jamais un autre provider — UN seul domaine
+# de sortie, celui de l'allowlist.
 auxiliary:
   vision:
     provider: "main"
@@ -39,7 +45,7 @@ stt:
   enabled: false                          # pas de vocal ; évite l'install lazy de faster-whisper
 
 agent:
-  max_turns: 10                           # boucle courte : modèle 4B + usage rédactionnel
+  max_turns: 10                           # boucle courte : usage purement rédactionnel
   verbose: false
 
 # Toolsets par plateforme.

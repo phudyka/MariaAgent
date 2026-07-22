@@ -23,8 +23,8 @@ ps: ## État des conteneurs
 
 info: ## Rappels : URL et accès (seul port publié)
 	@echo "Web UI   : http://localhost:3000  (Open WebUI, WEBUI_AUTH)"
-	@echo "hermes   : interne seul (net_internal, non exposé)"
-	@echo "ollama   : interne seul (net_internal, non exposé)"
+	@echo "hermes   : interne seul (net_internal, non exposé) → API Mistral via egress"
+	@echo "ollama   : profil 'local' (arrêté par défaut, retour 100 % local)"
 
 down: ## Arrêter la stack
 	docker compose down
