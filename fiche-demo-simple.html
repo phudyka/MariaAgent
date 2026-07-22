@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fiche démo simple — Agent ETS Maria</title>
+<style>
+  :root {
+    --bg:#F1F5F6; --surface:#FFFFFF; --surface-2:#E7EEEF;
+    --ink:#15242B; --ink-soft:#4C646D; --line:#D3E0E2;
+    --water:#0B6E7D; --water-deep:#08505C; --water-tint:#E1F0F2;
+    --ok:#2F7D52; --ok-tint:#E1F0E8;
+    --warn:#9A6B12; --warn-tint:#F6EEDD;
+    --danger:#B23A2E; --danger-tint:#F6E6E3;
+    --code-bg:#0C1A20; --code-ink:#D9E8EB; --code-line:#25424B; --code-accent:#4FC6D6; --code-dim:#7C99A0;
+    --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --radius:7px; --maxw:920px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0B1316; --surface:#111D22; --surface-2:#16242A;
+      --ink:#E7F1F3; --ink-soft:#94ABB3; --line:#22353C;
+      --water:#24AEC2; --water-deep:#57CBDB; --water-tint:#102A30;
+      --ok:#5FB483; --ok-tint:#12271D;
+      --warn:#D9AE63; --warn-tint:#2A2110;
+      --danger:#E28577; --danger-tint:#2A1612;
+      --code-bg:#070F12; --code-ink:#D9E8EB; --code-line:#1D343B; --code-accent:#4FC6D6; --code-dim:#6E8A91;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#F1F5F6; --surface:#FFFFFF; --surface-2:#E7EEEF;
+    --ink:#15242B; --ink-soft:#4C646D; --line:#D3E0E2;
+    --water:#0B6E7D; --water-deep:#08505C; --water-tint:#E1F0F2;
+    --ok:#2F7D52; --ok-tint:#E1F0E8; --warn:#9A6B12; --warn-tint:#F6EEDD;
+    --danger:#B23A2E; --danger-tint:#F6E6E3;
+    --code-bg:#0C1A20; --code-ink:#D9E8EB; --code-line:#25424B; --code-accent:#4FC6D6; --code-dim:#7C99A0;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0B1316; --surface:#111D22; --surface-2:#16242A;
+    --ink:#E7F1F3; --ink-soft:#94ABB3; --line:#22353C;
+    --water:#24AEC2; --water-deep:#57CBDB; --water-tint:#102A30;
+    --ok:#5FB483; --ok-tint:#12271D; --warn:#D9AE63; --warn-tint:#2A2110;
+    --danger:#E28577; --danger-tint:#2A1612;
+    --code-bg:#070F12; --code-ink:#D9E8EB; --code-line:#1D343B; --code-accent:#4FC6D6; --code-dim:#6E8A91;
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased;margin:0}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:32px 22px 64px}
+
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--water);font-weight:600}
+  h1{font-size:clamp(26px,4vw,36px);font-weight:800;letter-spacing:-.02em;
+    line-height:1.05;margin:.28em 0 .18em;text-wrap:balance}
+  .lede{color:var(--ink-soft);font-size:16px;max-width:62ch;margin:0}
+
+  .head{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:8px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;
+    font-family:var(--font-mono);font-size:12px;color:var(--ink-soft)}
+  .meta b{color:var(--ink);font-weight:600}
+
+  .preflight{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:18px}
+  .chip{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:11px 13px;display:flex;gap:10px;align-items:flex-start}
+  .chip .k{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--water);font-weight:600;white-space:nowrap;padding-top:2px}
+  .chip .v{font-size:13.5px;color:var(--ink)}
+  .chip .v code{font-family:var(--font-mono);font-size:12px;background:var(--surface-2);
+    padding:1px 5px;border-radius:4px}
+
+  .sec{margin-top:32px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    padding-bottom:8px;border-bottom:2px solid var(--water);margin-bottom:4px}
+  .sec-head h2{font-size:19px;font-weight:800;letter-spacing:-.01em;margin:0}
+
+  .step{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:20px 0;
+    border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:0}
+  .num{font-family:var(--font-mono);font-weight:700;font-size:15px;color:var(--water-deep);
+    background:var(--water-tint);border-radius:var(--radius);height:38px;
+    display:flex;align-items:center;justify-content:center}
+  .step .do{font-size:15.5px;font-weight:700;margin:2px 0 0}
+  .step .do .tag{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-soft);font-weight:600;margin-right:8px}
+  .step .sub{color:var(--ink-soft);font-size:14px;margin:6px 0 0}
+  .step .sub code,.inline-code{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-2);
+    padding:1.5px 6px;border-radius:4px;color:var(--ink)}
+  .stack{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+
+  .call{border-left:3px solid;border-radius:0 var(--radius) var(--radius) 0;padding:10px 14px;font-size:14px}
+  .call .lab{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    font-weight:700;display:block;margin-bottom:3px}
+  .exp{background:var(--ok-tint);border-color:var(--ok)}
+  .exp .lab{color:var(--ok)}
+  .exp p{margin:0;color:var(--ink)}
+  .exp b{font-family:var(--font-mono);font-weight:700;font-size:13.5px}
+  .say{background:var(--water-tint);border-color:var(--water)}
+  .say .lab{color:var(--water-deep)}
+  .say p{margin:0;color:var(--ink);font-style:italic}
+
+  /* paste input block */
+  .term{background:var(--code-bg);border:1px solid var(--code-line);border-radius:var(--radius);overflow:hidden}
+  .term-bar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--code-line)}
+  .term-bar .dot{width:9px;height:9px;border-radius:50%;background:var(--code-line)}
+  .term-bar .ttl{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--code-dim);margin-left:4px}
+  .term-bar .copy{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--code-accent);
+    background:transparent;border:1px solid var(--code-line);border-radius:5px;padding:3px 9px;cursor:pointer}
+  .term-bar .copy:hover{border-color:var(--code-accent)}
+  .term-bar .copy:focus-visible{outline:2px solid var(--code-accent);outline-offset:2px}
+  .term pre{margin:0;padding:13px 14px;overflow-x:auto}
+  .term code{font-family:var(--font-mono);font-size:12.5px;line-height:1.6;color:var(--code-ink);white-space:pre-wrap}
+
+  /* warn callout — model quirk */
+  .note{background:var(--warn-tint);border:1px solid var(--warn);border-radius:var(--radius);
+    padding:15px 17px;margin-top:22px}
+  .note .lab{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    font-weight:700;color:var(--warn);display:flex;align-items:center;gap:9px;margin-bottom:7px}
+  .note p{margin:0;font-size:14.5px;color:var(--ink)}
+  .note p+p{margin-top:7px}
+  .note b{font-weight:700}
+
+  .tbl-wrap{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:var(--radius)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:460px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  th{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-soft);background:var(--surface-2);font-weight:600}
+  td code{font-family:var(--font-mono);font-size:12px;background:var(--surface-2);padding:1.5px 6px;border-radius:4px}
+  .sym{color:var(--ink);font-weight:600}
+
+  .foot{margin-top:32px;padding-top:20px;border-top:1px solid var(--line);
+    display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .ref{font-size:13.5px}
+  .ref .k{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-soft);display:block;margin-bottom:2px}
+  .ref a,.ref .val{color:var(--water);font-family:var(--font-mono);font-size:13px;text-decoration:none;word-break:break-all}
+
+  @media (max-width:560px){ .step{grid-template-columns:36px 1fr;gap:12px} .num{height:32px;font-size:13px} }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media print{
+    :root{--bg:#fff;--surface:#fff;--surface-2:#f0f3f4}
+    body{color:#111}
+    .wrap{max-width:none;padding:0}
+    .term{background:#0c1a20}
+    .copy{display:none!important}
+    .step,.note,.sec{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="head">
+    <div class="eyebrow">Fiche démo · version simple</div>
+    <h1>Agent ETS Maria — 3 cas d'usage</h1>
+    <p class="lede">L'agent rédige des brouillons de mail commerciaux, en local, sur ce PC.
+      Trois cas simples. Tu colles, il rédige, tu relis. Modèle local — pas parfait :
+      la fiche dit quoi faire s'il déraille.</p>
+    <div class="meta">
+      <span>Durée <b>~5 min</b></span>
+      <span>Modèle <b>local qwen3:4b</b></span>
+      <span>Interface <b>localhost:3000</b></span>
+    </div>
+
+    <div class="preflight">
+      <div class="chip"><span class="k">Avant · 1</span><span class="v">Stack up : <code>docker compose ps</code> → conteneurs <b>Up</b></span></div>
+      <div class="chip"><span class="k">Avant · 2</span><span class="v">UI ouverte et connectée : <code>localhost:3000</code></span></div>
+      <div class="chip"><span class="k">Avant · 3</span><span class="v">Modèle <b>« Maria — catalogue »</b> sélectionné (prix via catalogue)</span></div>
+      <div class="chip"><span class="k">Avant · 4</span><span class="v"><b>Pré-chauffe</b> : envoie 1 message bidon (le modèle charge en VRAM, ~10&nbsp;s) → les suivants sont rapides</span></div>
+    </div>
+  </header>
+
+  <!-- CAS 1 -->
+  <section class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">Cas 1</div>
+      <h2>Répondre à un mail client</h2>
+    </div>
+    <div class="step">
+      <div class="num">A</div>
+      <div>
+        <p class="do"><span class="tag">Coller dans le chat</span>Un vrai mail client — l'agent rédige la réponse.</p>
+        <div class="stack">
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span><span class="ttl">à coller · mail client</span>
+              <button class="copy" data-copy type="button">copier</button></div>
+            <pre><code>Réponds à ce mail client :
+
+Bonjour, ma pompe de filtration fait beaucoup de bruit depuis une
+semaine et le débit a nettement baissé. Faut-il la remplacer ?
+Pouvez-vous passer ? Merci — Mme Berger (contrat entretien annuel)</code></pre>
+          </div>
+          <div class="call exp"><span class="lab">Attendu</span><p>Brouillon en <b>texte brut</b>, ton pro et chaleureux, propose une intervention. Cite réf/prix <b>si</b> dans le catalogue, sinon <b>[À COMPLÉTER]</b> — jamais un chiffre inventé.</p></div>
+          <div class="call say"><span class="lab">Dire</span><p>« Il rédige la réponse, cite vos références et vos prix quand ils existent. Rien n'est inventé. »</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAS 2 -->
+  <section class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">Cas 2</div>
+      <h2>Relancer un devis sans réponse</h2>
+    </div>
+    <div class="step">
+      <div class="num">B</div>
+      <div>
+        <p class="do"><span class="tag">Coller dans le chat</span>Une consigne de relance — l'agent trouve le ton.</p>
+        <div class="stack">
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span><span class="ttl">à coller · relance</span>
+              <button class="copy" data-copy type="button">copier</button></div>
+            <pre><code>Rédige une relance courtoise pour un devis resté sans réponse
+depuis 3 semaines. Client : M. Dupont. Objet : bâche à barres de
+sécurité. Reste chaleureux et propose de répondre à ses questions.</code></pre>
+          </div>
+          <div class="call exp"><span class="lab">Attendu</span><p>Relance courte et polie : rappelle le devis, reste chaleureux, propose de répondre aux questions. Pas de montant inventé.</p></div>
+          <div class="call say"><span class="lab">Dire</span><p>« Même exercice, autre besoin : il adapte le ton maison sans qu'on lui dicte chaque phrase. »</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAS 3 -->
+  <section class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">Cas 3</div>
+      <h2>Écrire un mail libre</h2>
+    </div>
+    <div class="step">
+      <div class="num">C</div>
+      <div>
+        <p class="do"><span class="tag">Coller dans le chat</span>Une demande ad hoc — l'agent produit un mail prêt à relire.</p>
+        <div class="stack">
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span><span class="ttl">à coller · mail libre</span>
+              <button class="copy" data-copy type="button">copier</button></div>
+            <pre><code>Rédige un court mail pour proposer à M. Martin un créneau
+d'intervention jeudi matin, pour l'entretien de sa piscine.</code></pre>
+          </div>
+          <div class="call exp"><span class="lab">Attendu</span><p>Mail court, texte brut, propose le créneau jeudi matin et demande confirmation.</p></div>
+          <div class="call say"><span class="lab">Dire</span><p>« Et pour tout le reste : on lui demande en une phrase, il pose le brouillon. »</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODEL QUIRK -->
+  <div class="note">
+    <div class="lab">⚠ Calé sur le petit modèle local</div>
+    <p>Le modèle tourne <b>sur ce PC</b> (qwen3:4b) — léger, donc <b>parfois capricieux</b>. Deux réflexes :</p>
+    <p>1. <b>Donne-lui du concret.</b> Un mail complet ou une consigne claire → bon brouillon. Une demande vague → résultat vague.</p>
+    <p>2. <b>Si un brouillon sort bizarre</b> (texte technique parasite type <span class="inline-code">[OUT-OF-BAND…]</span>, <span class="inline-code">Tool-use</span>, ou charabia) → <b>régénère la réponse</b> (1 clic). Ça repart propre. C'est intermittent, pas bloquant.</p>
+    <p>Astuce démo : garde <b>1–2 brouillons déjà vus propres</b> en réserve, zéro surprise devant le client.</p>
+  </div>
+
+  <!-- SI ÇA FOIRE -->
+  <section class="sec">
+    <div class="sec-head">
+      <div class="eyebrow">Filet</div>
+      <h2>Si ça foire</h2>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Symptôme</th><th>Correctif</th></tr></thead>
+        <tbody>
+          <tr><td class="sym">Brouillon avec du charabia technique</td><td><b>Régénérer</b> la réponse (le 4b déraille par intermittence). Repart propre.</td></tr>
+          <tr><td class="sym">Invente / se trompe de prix ou réf</td><td>Modèle <code>Maria — catalogue</code> pas sélectionné → le choisir, ou taper <code>#Maria</code> dans le chat</td></tr>
+          <tr><td class="sym"><code>[À COMPLÉTER]</code> à la place d'un prix</td><td><b>Normal</b> : donnée absente du catalogue. Compléter à la main — c'est la règle anti-invention, pas un bug</td></tr>
+          <tr><td class="sym">1<sup>er</sup> appel un peu lent (~10&nbsp;s)</td><td><b>Normal</b> : le modèle charge en VRAM. Les suivants sont rapides (garde-le chaud, pré-chauffe avant la démo)</td></tr>
+          <tr><td class="sym"><b>Toutes</b> les réponses très lentes (minutes)</td><td>Le conteneur ollama a <b>décroché du GPU</b> (tourne sur CPU). Recréer : <code>docker compose up -d --force-recreate ollama</code> — puis vérifier <code>nvidia-smi</code> ≈ 6&nbsp;GB utilisés</td></tr>
+          <tr><td class="sym">Stack éteinte / UI KO</td><td><code>./setup.sh</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- QUICK REF -->
+  <footer class="foot">
+    <div class="ref"><span class="k">Interface agent</span><a href="http://localhost:3000">localhost:3000</a></div>
+    <div class="ref"><span class="k">Modèle à choisir</span><span class="val">Maria — catalogue</span></div>
+    <div class="ref"><span class="k">Relancer la stack</span><span class="val">./setup.sh</span></div>
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll('[data-copy]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var code=btn.closest('.term').querySelector('code');
+      navigator.clipboard.writeText(code.innerText.trim()).then(function(){
+        var old=btn.textContent; btn.textContent='copié ✓';
+        setTimeout(function(){btn.textContent=old;},1500);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
