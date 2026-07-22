@@ -11,27 +11,36 @@ metadata:
 
 # Mails commerciaux ETS Maria
 
-Produire un **brouillon de mail en texte brut**, prêt à relire puis envoyer par un
-humain. Jamais d'envoi automatique — la sortie est le brouillon, rien d'autre.
+Produire un **brouillon de mail en texte brut**, prêt à relire puis envoyer par
+un humain. Jamais d'envoi automatique — la sortie est le brouillon, rien
+d'autre.
 
 ## Les trois tâches
 
 ### 1. Réponse à un client (`reponse_client`)
-Entrée : le mail du client (souvent copié-collé) + éventuels extraits catalogue fournis.
+
+Entrée : le mail du client (souvent copié-collé) + éventuels extraits catalogue
+fournis.
+
 - Répondre à chaque question posée, dans l'ordre du mail.
-- Produits : ne citer référence/prix/stock QUE depuis les extraits catalogue fournis
-  dans le message. Produit demandé absent des extraits → proposer de vérifier et
-  écrire `[À COMPLÉTER : référence et prix]`.
+- Produits : ne citer référence/prix/stock QUE depuis les extraits catalogue
+  fournis dans le message. Produit demandé absent des extraits → proposer de
+  vérifier et écrire `[À COMPLÉTER : référence et prix]`.
 - Terminer par une prochaine étape concrète (rappel, passage en magasin, devis).
 
 ### 2. Relance de devis (`relance_devis`)
+
 Entrée : numéro/objet du devis, date d'envoi, montant si fourni.
+
 - Rappeler le devis (numéro, objet, montant si connus — sinon `[À COMPLÉTER]`).
 - Une seule relance polie, sans pression ; proposer d'en discuter ou d'ajuster.
 - Ne jamais inventer de date limite de validité ni de remise.
 
 ### 3. Mail libre (`mail_libre`)
-Entrée : consigne libre (confirmation d'intervention, demande d'info fournisseur…).
+
+Entrée : consigne libre (confirmation d'intervention, demande d'info
+fournisseur…).
+
 - Suivre la consigne, appliquer les mêmes règles d'invention zéro.
 
 ## Contraintes de forme (toutes tâches)
@@ -41,11 +50,12 @@ Entrée : consigne libre (confirmation d'intervention, demande d'info fournisseu
 - Vouvoiement, ton artisan sérieux et chaleureux, phrases courtes.
 - Signature : reprendre le bloc signature de la fiche entreprise si fourni,
   sinon terminer par `[À COMPLÉTER : signature]`.
-- Toute donnée manquante → `[À COMPLÉTER : nature de l'info]`, jamais une invention.
+- Toute donnée manquante → `[À COMPLÉTER : nature de l'info]`, jamais une
+  invention.
 
 ## Ce que le RAG fournit
 
-Le RAG (recherche sémantique Open WebUI sur les données de l'entreprise)
-injecte automatiquement les passages pertinents : fiche entreprise, fiche
-client, devis, extraits catalogue, historique mails. Travailler exclusivement
-à partir de ces éléments — ne rien inventer, ne pas chercher d'autres sources.
+Le RAG (recherche sémantique Open WebUI sur les données de l'entreprise) injecte
+automatiquement les passages pertinents : fiche entreprise, fiche client, devis,
+extraits catalogue, historique mails. Travailler exclusivement à partir de ces
+éléments — ne rien inventer, ne pas chercher d'autres sources.

@@ -1,23 +1,40 @@
 # Agent Maria RAG sécurisée — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use
+> superpowers:subagent-driven-development (recommended) or
+> superpowers:executing-plans to implement this plan task-by-task. Steps use
+> checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Démo POC d'un agent commercial local pour ETS Maria : RAG local sur données mockées, servi par Ollama, orchestré par Hermes, exposé via Open WebUI uniquement, avec isolation réseau garantissant l'absence d'exfiltration.
+**Goal:** Démo POC d'un agent commercial local pour ETS Maria : RAG local sur
+données mockées, servi par Ollama, orchestré par Hermes, exposé via Open WebUI
+uniquement, avec isolation réseau garantissant l'absence d'exfiltration.
 
-**Architecture:** 4 conteneurs sur 2 réseaux docker. `ollama` + `hermes` + `open-webui` sur `net_internal` (`internal: true`, aucune route internet directe) ; `egress-proxy` (tinyproxy, allowlist) est le seul pont vers internet. Le RAG est natif Open WebUI ; le modèle n'a aucun tool sortant. Seul le port `open-webui:3000` est publié.
+**Architecture:** 4 conteneurs sur 2 réseaux docker. `ollama` + `hermes` +
+`open-webui` sur `net_internal` (`internal: true`, aucune route internet
+directe) ; `egress-proxy` (tinyproxy, allowlist) est le seul pont vers internet.
+Le RAG est natif Open WebUI ; le modèle n'a aucun tool sortant. Seul le port
+`open-webui:3000` est publié.
 
-**Tech Stack:** Docker Compose, Ollama (qwen3:4b-instruct-2507-q4_K_M), Hermes Agent (gateway OpenAI-compatible), Open WebUI (RAG + web search natifs), tinyproxy (egress allowlist), Bash.
+**Tech Stack:** Docker Compose, Ollama (qwen3:4b-instruct-2507-q4_K_M), Hermes
+Agent (gateway OpenAI-compatible), Open WebUI (RAG + web search natifs),
+tinyproxy (egress allowlist), Bash.
 
 ## Global Constraints
 
 - Aucune inférence externe : tout le calcul (modèle, embeddings) est local.
-- `context_length` = **65536** partout (minimum Hermes). Ollama : `OLLAMA_FLASH_ATTENTION=1` + `OLLAMA_KV_CACHE_TYPE=q4_0` pour tenir en 8 Go VRAM (GTX 1080).
-- Toolset modèle = `[skills, todo, memory]` — jamais élargir à `web`/`file`/`terminal`.
-- Un seul port publié sur l'hôte : `open-webui` → `3000`. `hermes:8642` jamais publié.
+- `context_length` = **65536** partout (minimum Hermes). Ollama :
+  `OLLAMA_FLASH_ATTENTION=1` + `OLLAMA_KV_CACHE_TYPE=q4_0` pour tenir en 8 Go
+  VRAM (GTX 1080).
+- Toolset modèle = `[skills, todo, memory]` — jamais élargir à
+  `web`/`file`/`terminal`.
+- Un seul port publié sur l'hôte : `open-webui` → `3000`. `hermes:8642` jamais
+  publié.
 - Données Maria montées `:ro`.
-- Le seul chemin internet est `egress-proxy`, `FilterDefaultDeny Yes` (allowlist stricte).
+- Le seul chemin internet est `egress-proxy`, `FilterDefaultDeny Yes` (allowlist
+  stricte).
 - Setup échoue si `MARIA_API_KEY` vaut encore `change-me-in-prod`.
-- Français partout, texte brut pour les brouillons (règles `SOUL.md` conservées).
+- Français partout, texte brut pour les brouillons (règles `SOUL.md`
+  conservées).
 - Images pinnées (pas de `:latest` / `:main` flottant) pour la reproductibilité.
 
 ---
@@ -31,24 +48,31 @@
 - `.env.example` (modifier) — clé + note fail-fast.
 - `.gitignore` (modifier) — retirer réf morte `agent/`.
 - `hermes/skills/mails-commerciaux/SKILL.md` (modifier) — wording RAG.
-- `data/entreprise.md`, `data/catalogue.md`, `data/clients/*.md`, `data/devis/*.md`, `data/mails/*.md` (créer) — mocks Maria.
-- `setup.sh` (créer) — fail-fast clé, up infra, pull modèle via proxy, checklist Open WebUI.
+- `data/entreprise.md`, `data/catalogue.md`, `data/clients/*.md`,
+  `data/devis/*.md`, `data/mails/*.md` (créer) — mocks Maria.
+- `setup.sh` (créer) — fail-fast clé, up infra, pull modèle via proxy, checklist
+  Open WebUI.
 - `eval.sh` (créer) — mini-éval anti-invention.
 - `README.md` (modifier) — réécriture cohérente.
-- `docs/superpowers/specs/2026-07-20-securite-prod.md` (créer) — durcissement prod.
+- `docs/superpowers/specs/2026-07-20-securite-prod.md` (créer) — durcissement
+  prod.
 
 ---
 
 ### Task 1: Topologie réseau sécurisée + egress-proxy
 
 **Files:**
+
 - Modify: `docker-compose.yml`
 - Create: `proxy/tinyproxy.conf`, `proxy/filter`
 
 **Interfaces:**
-- Produces: réseaux `net_internal` (internal), `net_egress` (bridge) ; service `egress-proxy` joignable en `http://egress-proxy:8888` depuis `net_internal`.
 
-- [ ] **Step 1: Créer `proxy/filter`** (allowlist de domaines, un motif par ligne)
+- Produces: réseaux `net_internal` (internal), `net_egress` (bridge) ; service
+  `egress-proxy` joignable en `http://egress-proxy:8888` depuis `net_internal`.
+
+- [ ] **Step 1: Créer `proxy/filter`** (allowlist de domaines, un motif par
+      ligne)
 
 ```
 ^registry\.ollama\.ai$
@@ -129,7 +153,7 @@ services:
     restart: unless-stopped
     depends_on: [hermes]
     ports:
-      - "3000:8080"                       # SEUL port publié
+      - "3000:8080" # SEUL port publié
     environment:
       - WEBUI_AUTH=true
       - ENABLE_COMMUNITY_FEATURES=false
@@ -157,7 +181,7 @@ services:
     volumes:
       - ./proxy/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
       - ./proxy/filter:/etc/tinyproxy/filter:ro
-    networks: [net_internal, net_egress]   # SEUL service à toucher net_egress
+    networks: [net_internal, net_egress] # SEUL service à toucher net_egress
 
 networks:
   net_internal:
@@ -172,8 +196,9 @@ volumes:
 
 - [ ] **Step 4: Vérifier la config compose**
 
-Run: `docker compose config >/dev/null && echo OK`
-Expected: `OK` (pas d'erreur de parsing). Note : `MARIA_API_KEY` doit être exportée ou dans `.env` (voir Task 2).
+Run: `docker compose config >/dev/null && echo OK` Expected: `OK` (pas d'erreur
+de parsing). Note : `MARIA_API_KEY` doit être exportée ou dans `.env` (voir Task
+2).
 
 - [ ] **Step 5: Vérifier l'allowlist du proxy** (démarrer proxy seul)
 
@@ -183,6 +208,7 @@ docker compose up -d egress-proxy
 # Domaine hors allowlist => refusé
 docker compose exec egress-proxy sh -c "wget -qO- -e use_proxy=yes -e http_proxy=http://127.0.0.1:8888 http://example.com" ; echo "exit=$?"
 ```
+
 Expected: échec (exit non nul) / réponse "Filtered" — example.com **bloqué**.
 
 - [ ] **Step 6: Commit**
@@ -197,18 +223,24 @@ git commit -m "feat: topologie réseau isolée + egress-proxy allowlist"
 ### Task 2: Config Hermes & compose cohérents + fail-fast clé
 
 **Files:**
+
 - Modify: `hermes/config.yaml.example`, `.env.example`, `.gitignore`
 
 **Interfaces:**
+
 - Consumes: services de Task 1.
-- Produces: gateway Hermes joignable en `http://hermes:8642/v1` avec `Authorization: Bearer $MARIA_API_KEY`.
+- Produces: gateway Hermes joignable en `http://hermes:8642/v1` avec
+  `Authorization: Bearer $MARIA_API_KEY`.
 
 - [ ] **Step 1: Corriger `hermes/config.yaml.example`**
 
   - L9 `base_url` → `"http://ollama:11434/v1"` (nom de service, pas 127.0.0.1).
-  - L11 `context_length: 65536` — garder, commentaire : « aligné sur `OLLAMA_CONTEXT_LENGTH`, KV q4_0 + flash attention ».
-  - L2 : reformuler « À copier vers `~/.hermes/config.yaml` (monté dans le conteneur hermes en `/opt/data`) ».
-  - L49-52 : remplacer le bloc « multi-agents / proxy `agent/app.py` / assemblage déterministe » par :
+  - L11 `context_length: 65536` — garder, commentaire : « aligné sur
+    `OLLAMA_CONTEXT_LENGTH`, KV q4_0 + flash attention ».
+  - L2 : reformuler « À copier vers `~/.hermes/config.yaml` (monté dans le
+    conteneur hermes en `/opt/data`) ».
+  - L49-52 : remplacer le bloc « multi-agents / proxy `agent/app.py` /
+    assemblage déterministe » par :
 
 ```
 # api_server = ce que voient les employés via Open WebUI. Le CONTEXTE métier
@@ -218,12 +250,12 @@ git commit -m "feat: topologie réseau isolée + egress-proxy allowlist"
 # Ne jamais élargir api_server à [terminal, file, web].
 ```
 
-  - L63 : `host: "0.0.0.0"` + commentaire :
+- L63 : `host: "0.0.0.0"` + commentaire :
 
 ```
-      host: "0.0.0.0"   # bind interne au conteneur (joignable par open-webui
-                        # sur net_internal). Port NON publié + réseau sans
-                        # egress => pas une exposition LAN.
+host: "0.0.0.0"   # bind interne au conteneur (joignable par open-webui
+                  # sur net_internal). Port NON publié + réseau sans
+                  # egress => pas une exposition LAN.
 ```
 
 - [ ] **Step 2: Mettre à jour `.env.example`**
@@ -235,11 +267,15 @@ git commit -m "feat: topologie réseau isolée + egress-proxy allowlist"
 MARIA_API_KEY=change-me-in-prod
 ```
 
-- [ ] **Step 3: Nettoyer `.gitignore`** — retirer la ligne `agent/data/maria.db` (dossier `agent/` supprimé). Ajouter `data/` reste versionné (mocks), mais ignorer un éventuel index : garder `.env`, `__pycache__/`, `*.log`, `*.pyc`, `.venv/`.
+- [ ] **Step 3: Nettoyer `.gitignore`** — retirer la ligne `agent/data/maria.db`
+      (dossier `agent/` supprimé). Ajouter `data/` reste versionné (mocks), mais
+      ignorer un éventuel index : garder `.env`, `__pycache__/`, `*.log`,
+      `*.pyc`, `.venv/`.
 
 - [ ] **Step 4: Vérifier la cohérence (grep)**
 
-Run: `grep -rn "127.0.0.1:11434\|agent/\|multi-agent\|proxy agent" hermes/ .gitignore ; echo "exit=$?"`
+Run:
+`grep -rn "127.0.0.1:11434\|agent/\|multi-agent\|proxy agent" hermes/ .gitignore ; echo "exit=$?"`
 Expected: aucune correspondance (`exit=1`).
 
 - [ ] **Step 5: Commit**
@@ -254,10 +290,15 @@ git commit -m "fix: config Hermes cohérente (base_url, context, bind), refs mor
 ### Task 3: Données mock Maria (RAG)
 
 **Files:**
-- Create: `data/entreprise.md`, `data/catalogue.md`, `data/clients/durand.md`, `data/devis/2024-118.md`, `data/mails/durand-2024.md` (+ 2-3 autres clients/devis/mails pour le volume).
+
+- Create: `data/entreprise.md`, `data/catalogue.md`, `data/clients/durand.md`,
+  `data/devis/2024-118.md`, `data/mails/durand-2024.md` (+ 2-3 autres
+  clients/devis/mails pour le volume).
 
 **Interfaces:**
-- Produces: corpus RAG cohérent. **Le scénario de démo exige** : client « Durand », devis « 2024-118 », références catalogue citées dans le devis.
+
+- Produces: corpus RAG cohérent. **Le scénario de démo exige** : client « Durand
+  », devis « 2024-118 », références catalogue citées dans le devis.
 
 - [ ] **Step 1: `data/entreprise.md`** — fiche + bloc signature
 
@@ -272,7 +313,8 @@ L'équipe ETS Maria
 04 93 00 00 00 — contact@ets-maria.fr
 ```
 
-- [ ] **Step 2: `data/catalogue.md`** — lignes `- REF | nom | marque | prix € HT | stock | specs`
+- [ ] **Step 2: `data/catalogue.md`** — lignes
+      `- REF | nom | marque | prix € HT | stock | specs`
 
 ```
 # Catalogue pièces (extrait)
@@ -314,12 +356,15 @@ Statut : envoyé, sans réponse.
 [2024-05-14] ETS Maria : "Devis 2024-118 envoyé (pompe POMP-150 + robot ROBOT-PX)."
 ```
 
-- [ ] **Step 6: Ajouter 2 clients + 2 devis + 1 mail supplémentaires** (même format, noms différents) pour donner du volume au RAG et éviter que la seule réponse plausible soit Durand.
+- [ ] **Step 6: Ajouter 2 clients + 2 devis + 1 mail supplémentaires** (même
+      format, noms différents) pour donner du volume au RAG et éviter que la
+      seule réponse plausible soit Durand.
 
 - [ ] **Step 7: Vérifier les références croisées**
 
-Run: `grep -rl "2024-118" data/ && grep -rl "POMP-150" data/`
-Expected: le devis et le catalogue se répondent (au moins `data/devis/2024-118.md` et `data/catalogue.md`).
+Run: `grep -rl "2024-118" data/ && grep -rl "POMP-150" data/` Expected: le devis
+et le catalogue se répondent (au moins `data/devis/2024-118.md` et
+`data/catalogue.md`).
 
 - [ ] **Step 8: Commit**
 
@@ -333,9 +378,11 @@ git commit -m "feat: données mock Maria pour le RAG (scénario Durand/2024-118)
 ### Task 4: setup.sh + préconfiguration Open WebUI
 
 **Files:**
+
 - Create: `setup.sh`
 
 **Interfaces:**
+
 - Consumes: Tasks 1-3.
 - Produces: stack démarrée, modèle pullé, checklist Open WebUI affichée.
 
@@ -386,22 +433,28 @@ EOF
 chmod +x setup.sh
 ./setup.sh
 ```
-Expected : garde-fou clé OK, `docker compose up` sain, pull réussi, checklist affichée.
+
+Expected : garde-fou clé OK, `docker compose up` sain, pull réussi, checklist
+affichée.
 
 - [ ] **Step 3: Vérifier le gateway répond** (après pull)
 
 Run:
+
 ```bash
 source .env
 docker compose exec open-webui sh -c \
   "wget -qO- --header='Authorization: Bearer $MARIA_API_KEY' http://hermes:8642/v1/models"
 ```
+
 Expected : JSON listant `maria-agent`.
 
 - [ ] **Step 4: Vérifier l'isolation** (ollama n'a pas d'egress direct)
 
-Run: `docker compose exec ollama sh -c "wget -qO- --timeout=5 http://example.com" ; echo "exit=$?"`
-Expected : échec (pas de route directe ; seul le proxy sort, et example.com est hors allowlist).
+Run:
+`docker compose exec ollama sh -c "wget -qO- --timeout=5 http://example.com" ; echo "exit=$?"`
+Expected : échec (pas de route directe ; seul le proxy sort, et example.com est
+hors allowlist).
 
 - [ ] **Step 5: Commit**
 
@@ -415,13 +468,16 @@ git commit -m "feat: setup.sh (fail-fast clé, up, pull, checklist Open WebUI)"
 ### Task 5: Mini-éval anti-invention + wording RAG
 
 **Files:**
+
 - Create: `eval.sh`
 - Modify: `hermes/skills/mails-commerciaux/SKILL.md`
 
 **Interfaces:**
+
 - Consumes: gateway de Task 4.
 
-- [ ] **Step 1: Corriger `SKILL.md`** (L46-51) — remplacer « L'interface de l'entreprise enrichit chaque demande » par :
+- [ ] **Step 1: Corriger `SKILL.md`** (L46-51) — remplacer « L'interface de
+      l'entreprise enrichit chaque demande » par :
 
 ```
 ## Ce que le RAG fournit
@@ -432,7 +488,8 @@ client, devis, extraits catalogue, historique mails. Travailler exclusivement
 à partir de ces éléments — ne rien inventer, ne pas chercher d'autres sources.
 ```
 
-- [ ] **Step 2: Écrire `eval.sh`** (anti-invention : donnée absente => `[À COMPLÉTER]`, aucun `€` inventé)
+- [ ] **Step 2: Écrire `eval.sh`** (anti-invention : donnée absente =>
+      `[À COMPLÉTER]`, aucun `€` inventé)
 
 ```bash
 #!/usr/bin/env bash
@@ -467,7 +524,9 @@ echo "$out" | grep -qE "24 ?h|sous 24" && { echo "FAIL cas2: délai inventé"; f
 chmod +x eval.sh
 ./eval.sh
 ```
-Expected : `EVAL OK`. (Si un 4B échoue par intermittence, c'est le signal documenté « modèle plus gros en prod » — noter, ne pas masquer.)
+
+Expected : `EVAL OK`. (Si un 4B échoue par intermittence, c'est le signal
+documenté « modèle plus gros en prod » — noter, ne pas masquer.)
 
 - [ ] **Step 4: Commit**
 
@@ -481,21 +540,34 @@ git commit -m "feat: mini-éval anti-invention + wording RAG dans le skill"
 ### Task 6: README + doc durcissement prod
 
 **Files:**
+
 - Modify: `README.md`
 - Create: `docs/superpowers/specs/2026-07-20-securite-prod.md`
 
-- [ ] **Step 1: Réécrire `README.md`** — sections : Stack (3+1 conteneurs, seul 3000 publié), Sécurité par la topologie (schéma + les 5 invariants), Données mock & RAG, Démarrage (`cp .env.example .env` → éditer clé → `./setup.sh`), Scénario de démo, Personnalisation (`SOUL.md`, `data/`, allowlist proxy). Retirer toute mention de `8642` exposé au LAN et du proxy custom.
+- [ ] **Step 1: Réécrire `README.md`** — sections : Stack (3+1 conteneurs, seul
+      3000 publié), Sécurité par la topologie (schéma + les 5 invariants),
+      Données mock & RAG, Démarrage (`cp .env.example .env` → éditer clé →
+      `./setup.sh`), Scénario de démo, Personnalisation (`SOUL.md`, `data/`,
+      allowlist proxy). Retirer toute mention de `8642` exposé au LAN et du
+      proxy custom.
 
-- [ ] **Step 2: Créer `docs/superpowers/specs/2026-07-20-securite-prod.md`** — reprendre la Section 4 de la spec : threat model (insider / outsider / modèle compromis), chiffrement at-rest (LUKS/gocryptfs), RBAC + audit, connecteur Sage 100 read-only + sync RAG, secrets manager, TLS/DLP/backup. Marquer clairement : **non implémenté dans la démo**.
+- [ ] **Step 2: Créer `docs/superpowers/specs/2026-07-20-securite-prod.md`** —
+      reprendre la Section 4 de la spec : threat model (insider / outsider /
+      modèle compromis), chiffrement at-rest (LUKS/gocryptfs), RBAC + audit,
+      connecteur Sage 100 read-only + sync RAG, secrets manager, TLS/DLP/backup.
+      Marquer clairement : **non implémenté dans la démo**.
 
 - [ ] **Step 3: Vérifier l'absence de réfs mortes dans tout le repo**
 
 Run:
+
 ```bash
 grep -rn -E "8642:8642|127\.0\.0\.1:11434|agent/app\.py|WEB_SEARCH: \"false\"|enrichit chaque demande|change-me-in-prod" \
   --include='*.md' --include='*.yml' --include='*.example' --include='.gitignore' . | grep -v '\.venv' | grep -v 'docs/superpowers'
 ```
-Expected : aucune correspondance (les refs mortes de l'audit ont disparu ; les specs/plans qui les *citent* sont exclus).
+
+Expected : aucune correspondance (les refs mortes de l'audit ont disparu ; les
+specs/plans qui les _citent_ sont exclus).
 
 - [ ] **Step 4: Commit**
 
@@ -509,15 +581,24 @@ git commit -m "docs: README cohérent + doc durcissement prod"
 ## Self-Review
 
 **Spec coverage :**
+
 - S1 (archi/réseau) → Task 1 (+ config bind Task 2). ✓
 - S2 (données mock + RAG) → Task 3 + Task 4 (Knowledge). ✓
-- S3 (persona anti-invention) → SOUL réutilisé (Task 4 checklist) + wording SKILL Task 5. ✓
+- S3 (persona anti-invention) → SOUL réutilisé (Task 4 checklist) + wording
+  SKILL Task 5. ✓
 - S4 (durcissement prod) → Task 6 Step 2. ✓
 - S5 (setup léger) → Task 4. ✓
 - S6 (scénario démo) → data Task 3 + README Task 6. ✓
 - S7 (mini-éval) → Task 5. ✓
-- S8 (nettoyage cohérence, 12 items) → Tasks 1/2/5/6 + grep de vérif Task 6 Step 3. ✓
+- S8 (nettoyage cohérence, 12 items) → Tasks 1/2/5/6 + grep de vérif Task 6
+  Step 3. ✓
 
-**Placeholder scan :** allowlist domaine fournisseur marquée « à ajuster » (légitime, dépend du fournisseur réel) ; noms d'env vars Open WebUI (`ENABLE_RAG_WEB_SEARCH`, `RAG_WEB_SEARCH_ENGINE`, `RAG_EMBEDDING_MODEL`) et tags d'images à **confirmer contre les images pinnées** au démarrage (Task 4 Step 2 les exerce). Pas de TODO/TBD.
+**Placeholder scan :** allowlist domaine fournisseur marquée « à ajuster »
+(légitime, dépend du fournisseur réel) ; noms d'env vars Open WebUI
+(`ENABLE_RAG_WEB_SEARCH`, `RAG_WEB_SEARCH_ENGINE`, `RAG_EMBEDDING_MODEL`) et
+tags d'images à **confirmer contre les images pinnées** au démarrage (Task 4
+Step 2 les exerce). Pas de TODO/TBD.
 
-**Type consistency :** `MARIA_API_KEY`, service names (`ollama`, `hermes`, `open-webui`, `egress-proxy`), ports (`8642` interne, `3000` publié, `8888` proxy, `11434` ollama) cohérents entre toutes les tâches.
+**Type consistency :** `MARIA_API_KEY`, service names (`ollama`, `hermes`,
+`open-webui`, `egress-proxy`), ports (`8642` interne, `3000` publié, `8888`
+proxy, `11434` ollama) cohérents entre toutes les tâches.

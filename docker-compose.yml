@@ -54,7 +54,7 @@ services:
     restart: unless-stopped
     depends_on: [hermes]
     ports:
-      - "127.0.0.1:3000:8080"             # Seul port PRODUIT publié, bind loopback (démo locale)
+      - "127.0.0.1:3000:8080" # Seul port PRODUIT publié, bind loopback (démo locale)
     environment:
       - WEBUI_AUTH=true
       - ENABLE_COMMUNITY_FEATURES=false
@@ -95,8 +95,8 @@ services:
       - MP_SMTP_AUTH_ACCEPT_ANY=true
       - MP_SMTP_AUTH_ALLOW_INSECURE=true
     ports:
-      - "127.0.0.1:8025:8025"             # webmail (démo), loopback
-      - "127.0.0.1:1025:1025"             # SMTP, pour seeder data/inbox/*.eml
+      - "127.0.0.1:8025:8025" # webmail (démo), loopback
+      - "127.0.0.1:1025:1025" # SMTP, pour seeder data/inbox/*.eml
     networks: [net_internal, net_publish]
 
   egress-proxy:
@@ -106,7 +106,7 @@ services:
     volumes:
       - ./proxy/tinyproxy.conf:/etc/tinyproxy/tinyproxy.conf:ro
       - ./proxy/filter:/etc/tinyproxy/filter:ro
-    networks: [net_internal, net_egress]   # SEUL service à toucher net_egress
+    networks: [net_internal, net_egress] # SEUL service à toucher net_egress
 
 networks:
   net_internal:
