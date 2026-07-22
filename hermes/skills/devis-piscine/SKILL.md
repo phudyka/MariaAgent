@@ -29,8 +29,11 @@ fourni en contexte — jamais de mémoire, jamais recalculé.
 
 - Chercher le volume (m³) dans la demande.
 - Absent mais dimensions présentes : volume = longueur × largeur × profondeur
-  moyenne, arrondi au m³ supérieur. C'est le SEUL calcul autorisé. Forme ronde,
-  ovale, libre, ou le moindre doute → demander le volume au commercial.
+  moyenne, arrondi au m³ supérieur. Deux profondeurs données (petit et grand
+  bain, ex. « 1,2 à 1,8 m ») : profondeur moyenne = leur moyenne. Bassin
+  rectangulaire avec longueur, largeur et profondeur(s) → calcule directement,
+  SANS demander confirmation. C'est le SEUL calcul autorisé. Forme ronde,
+  ovale, libre, ou dimensions incomplètes → demander le volume au commercial.
 - Ni volume ni dimensions → poser UNE question courte (volume, ou longueur ×
   largeur × profondeur moyenne) et N'ÉMETTRE AUCUN DEVIS, aucune ligne chiffrée,
   aucune référence.

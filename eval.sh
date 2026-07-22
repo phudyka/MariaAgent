@@ -44,12 +44,12 @@ echo "$out" | grep -qiE 'volume|dimension' || { echo "FAIL cas3: ne demande pas 
 echo "$out" | grep -qE 'POMP-|FILT-|VANN-|SKIM-' && { echo "FAIL cas3: référence émise sans volume"; fail=1; }
 echo "$out" | grep -qE '[0-9]+([.,][0-9]{2})? ?€' && { echo "FAIL cas3: prix inventé"; fail=1; }
 
-# Cas 4 : volume fourni mais AUCUN contexte abaque (l'éval court-circuite le RAG)
-# -> squelette avec [À COMPLÉTER], zéro référence/prix de mémoire. Les réfs mock
-# n'existant pas dans le monde réel, toute réf citée = invention détectable.
+# Cas 4 : devis 45 m³ -> recopie EXACTE de la tranche 41-50 de l'abaque
+# (concaténé au SOUL par setup.sh). Total exact = preuve que le modèle recopie
+# sans recalculer ni inventer ; MO/numéro restent à compléter.
 out=$(ask "Prépare le devis d'installation filtration complète pour un bassin de 45 m³, client Mme Blanc.")
-echo "$out" | grep -q "COMPLÉTER" || { echo "FAIL cas4: pas de [À COMPLÉTER]"; fail=1; }
-echo "$out" | grep -qE 'POMP-|FILT-|VANN-|SKIM-' && { echo "FAIL cas4: référence inventée"; fail=1; }
-echo "$out" | grep -qE '[0-9]+([.,][0-9]{2})? ?€' && { echo "FAIL cas4: prix inventé"; fail=1; }
+echo "$out" | grep -q "POMP-075" || { echo "FAIL cas4: pompe de la tranche 41-50 absente"; fail=1; }
+echo "$out" | grep -q "1302.00" || { echo "FAIL cas4: total HT exact absent (recalcul ou invention)"; fail=1; }
+echo "$out" | grep -q "COMPLÉT" || { echo "FAIL cas4: plus aucun [À COMPLÉTER] (MO/numéro devraient rester ouverts)"; fail=1; }
 
 [ "$fail" -eq 0 ] && echo "EVAL OK" || { echo "EVAL ÉCHOUÉE"; exit 1; }
