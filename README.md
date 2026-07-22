@@ -169,9 +169,11 @@ collection Knowledge « Maria » pointée sur `data/`, web search activé.
 ### Démo devis filtration (tâche principale)
 
 L'agent produit un devis d'installation complète (pompe + filtre + pièces)
-depuis l'abaque de dimensionnement. Pré-requis : uploader
-`data/abaque-filtration.md` et `data/catalogue.md` (ré-upload si déjà présent)
-dans la collection « Knowledge » d'Open WebUI.
+depuis l'abaque de dimensionnement. L'abaque est livré au modèle par le SOUL
+(`setup.sh` concatène persona + abaque dans `~/.hermes/SOUL.md`) — aucun
+upload nécessaire pour le dimensionnement. Le RAG (collection « Knowledge »)
+sert le reste : `data/catalogue.md` (ré-upload après modification), fiches
+clients, devis, mails.
 
 Requêtes de démo :
 

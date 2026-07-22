@@ -241,3 +241,30 @@ aligné, pas un tableau).
 - « Fais-moi un devis » sans volume → l'agent pose la question du volume.
 - « Piscine à débordement 120 m³ » → orientation étude atelier, zéro chiffre.
 - Invariants sécu intacts (compose, proxy, toolset `[]`).
+
+## 9. Révision post-implémentation (2026-07-22, soir)
+
+Deux hypothèses de la spec sont tombées à l'implémentation ; architecture
+révisée en conséquence, critères §8 tous validés en bout en bout :
+
+1. **Les SKILL.md ne parlent pas au modèle avec le toolset `[]`** : Hermes
+   n'injecte qu'un index (nom + description), le contenu se charge via le tool
+   `skill_view` — désactivé ici. Le skill `devis-piscine` reste comme
+   source/documentation ; la procédure et le template opérationnels vivent
+   dans `hermes/SOUL.md` (comme les règles mails l'ont toujours fait).
+2. **Le RAG ne sait pas choisir une tranche** : sélectionner « 48 m³ » dans
+   « 41 à 50 » est un test d'intervalle numérique ; l'embedding
+   (all-MiniLM-L6-v2, anglais) classe toutes les tranches à distance quasi
+   égale. Après trois itérations (chunks soudés ≤ 1 500 chars, énumération des
+   volumes couverts, exemples de bassins générés, query generation avec calcul
+   de volume — conservés), la décision : **l'abaque voyage dans le SOUL** —
+   `setup.sh` concatène `hermes/SOUL.md` + `data/abaque-filtration.md` vers
+   `~/.hermes/SOUL.md` (~3 k tokens, coût négligeable, fiabilité totale). Le
+   RAG garde catalogue, clients, devis, mails.
+3. Réglages persistés dans la DB Open WebUI (priment sur les env) : template
+   RAG neutre devis+mails, query generation calculant le volume avant
+   retrieval, `chunk_size` 1500.
+4. `eval.sh` cas 4 renforcé : « bassin de 45 m³ » doit produire la **recopie
+   exacte** de la tranche 41–50 (POMP-075, total 1302.00 €) avec les
+   `[À COMPLÉTER]` restants — teste la recopie sans recalcul, plus fort que le
+   squelette initialement spécifié.

@@ -42,8 +42,10 @@ docker build -t hermes-agent:local ~/.local/opt/hermes-agent
 ./eval.sh
 
 # Régénérer l'abaque de dimensionnement (one-shot, poste dev — moteur Peep
-# requis dans ../Peep ; jamais exécuté chez Maria)
+# requis dans ../Peep ; jamais exécuté chez Maria), puis redéployer le SOUL
+# (setup.sh concatène SOUL + abaque) et recharger hermes
 npx -y tsx tools/gen-abaque.ts > data/abaque-filtration.md
+./setup.sh && docker compose restart hermes
 
 docker compose logs -f hermes          # logs d'un service
 docker compose down                    # arrêt
@@ -118,9 +120,26 @@ Points qui demandent de lire plusieurs fichiers pour être compris :
    `data/abaque-filtration.md` est généré par `tools/gen-abaque.ts` depuis le
    moteur hydraulique de `../Peep` (logique provisoire, à faire valider par
    Maria — formule puissance pompe connue fausse, sélection par débit catalogue
-   à la place). Le modèle recopie une tranche, totaux compris. Corriger la
-   logique = éditer Peep/`PARAMS`, régénérer, ré-uploader dans Knowledge — ni le
-   skill ni SOUL ne bougent.
+   à la place). Le modèle recopie une tranche, totaux compris. **L'abaque
+   voyage dans le SOUL, pas dans le RAG** : `setup.sh` concatène
+   `hermes/SOUL.md` + `data/abaque-filtration.md` vers `~/.hermes/SOUL.md` —
+   choisir une tranche est un test d'intervalle numérique que le retrieval par
+   embedding (all-MiniLM, anglais) rate systématiquement. Corriger la logique =
+   éditer Peep/`PARAMS`, régénérer, relancer `./setup.sh` + `docker compose
+   restart hermes`.
+
+6. **Les SKILL.md ne sont pas injectés au modèle** avec le toolset `[]` :
+   Hermes n'injecte qu'un index nom+description, le contenu se charge via le
+   tool `skill_view` (désactivé ici). Toute règle métier opérationnelle doit
+   vivre dans SOUL.md ; `hermes/skills/` reste documentation/source. De plus,
+   l'image resynchronise ~70 skills bundled dans `~/.hermes/skills/` à chaque
+   boot — ne pas s'étonner de leur présence.
+
+7. **Réglages RAG persistés dans la DB Open WebUI** (volume `open-webui`,
+   priment sur les env — les recréer si le volume saute) : template RAG neutre
+   devis+mails, query generation avec calcul de volume (transforme « 8 × 4 m
+   prof 1,5 » en « bassin de 48 m³ » avant retrieval), `chunk_size` 1500. Posés
+   via l'API/DB le 2026-07-22 ; l'UI Admin > Settings > Documents les affiche.
 
 ## Invariants de sécurité — ne pas casser
 
