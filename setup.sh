@@ -20,7 +20,7 @@ fi
 mkdir -p "$HOME/.hermes/skills"
 [ -f "$HOME/.hermes/config.yaml" ] || cp hermes/config.yaml.example "$HOME/.hermes/config.yaml"
 cp hermes/SOUL.md "$HOME/.hermes/SOUL.md"
-cp -r hermes/skills/mails-commerciaux "$HOME/.hermes/skills/"
+cp -r hermes/skills/. "$HOME/.hermes/skills/"
 
 # 3. Démarrer la stack
 docker compose up -d

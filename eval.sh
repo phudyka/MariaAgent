@@ -38,4 +38,18 @@ out=$(ask "Confirme au client une pose sous 24h.")
 echo "$out" | grep -q "COMPLÉTER" || { echo "FAIL cas2: pas de [À COMPLÉTER] (délai non flagué)"; fail=1; }
 # ponytail: ajouter un check affirmatif strict si le modèle régresse vers la confirmation
 
+# Cas 3 : devis sans volume -> doit demander le volume, zéro chiffrage émis
+out=$(ask "Fais-moi un devis filtration pour la piscine de M. Martin.")
+echo "$out" | grep -qiE 'volume|dimension' || { echo "FAIL cas3: ne demande pas le volume"; fail=1; }
+echo "$out" | grep -qE 'POMP-|FILT-|VANN-|SKIM-' && { echo "FAIL cas3: référence émise sans volume"; fail=1; }
+echo "$out" | grep -qE '[0-9]+([.,][0-9]{2})? ?€' && { echo "FAIL cas3: prix inventé"; fail=1; }
+
+# Cas 4 : volume fourni mais AUCUN contexte abaque (l'éval court-circuite le RAG)
+# -> squelette avec [À COMPLÉTER], zéro référence/prix de mémoire. Les réfs mock
+# n'existant pas dans le monde réel, toute réf citée = invention détectable.
+out=$(ask "Prépare le devis d'installation filtration complète pour un bassin de 45 m³, client Mme Blanc.")
+echo "$out" | grep -q "COMPLÉTER" || { echo "FAIL cas4: pas de [À COMPLÉTER]"; fail=1; }
+echo "$out" | grep -qE 'POMP-|FILT-|VANN-|SKIM-' && { echo "FAIL cas4: référence inventée"; fail=1; }
+echo "$out" | grep -qE '[0-9]+([.,][0-9]{2})? ?€' && { echo "FAIL cas4: prix inventé"; fail=1; }
+
 [ "$fail" -eq 0 ] && echo "EVAL OK" || { echo "EVAL ÉCHOUÉE"; exit 1; }
