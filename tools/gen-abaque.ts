@@ -62,16 +62,49 @@ const ART = {
 };
 
 const TRANCHES = [
-  { max: 20, label: "jusqu'à 20 m³" },
-  { max: 30, label: "21 à 30 m³" },
-  { max: 40, label: "31 à 40 m³" },
-  { max: 50, label: "41 à 50 m³" },
-  { max: 60, label: "51 à 60 m³" },
-  { max: 70, label: "61 à 70 m³" },
-  { max: 80, label: "71 à 80 m³" },
-  { max: 90, label: "81 à 90 m³" },
-  { max: 100, label: "91 à 100 m³" },
+  { min: 10, max: 20, label: "jusqu'à 20 m³" },
+  { min: 21, max: 30, label: "21 à 30 m³" },
+  { min: 31, max: 40, label: "31 à 40 m³" },
+  { min: 41, max: 50, label: "41 à 50 m³" },
+  { min: 51, max: 60, label: "51 à 60 m³" },
+  { min: 61, max: 70, label: "61 à 70 m³" },
+  { min: 71, max: 80, label: "71 à 80 m³" },
+  { min: 81, max: 90, label: "81 à 90 m³" },
+  { min: 91, max: 100, label: "91 à 100 m³" },
 ];
+
+// Énumération explicite des volumes : seul pont lexical fiable entre une
+// requête « bassin de 48 m³ » et sa tranche (l'embedding ne sait pas que
+// 48 ∈ [41, 50]).
+const volumes = (t: { min: number; max: number }) =>
+  Array.from({ length: t.max - t.min + 1 }, (_, i) => t.min + i).join(", ");
+
+// Exemples de bassins par tranche : pont lexical pour les requêtes en
+// dimensions (« piscine 8 x 4 m prof 1,5 ») que l'embedding ne sait pas
+// convertir en volume. Dimensions standard du marché × profondeurs moyennes.
+const fr = (n: number) => String(n).replace(".", ",");
+const exemples = new Map<number, string[]>();
+for (const [L, l] of [
+  [5, 3],
+  [6, 3],
+  [7, 3.5],
+  [8, 4],
+  [9, 4.5],
+  [10, 5],
+  [11, 5],
+  [12, 6],
+] as const) {
+  for (const prof of [1.2, 1.5, 1.8] as const) {
+    const vol = Math.ceil(L * l * prof);
+    const t = TRANCHES.find((tr) => vol >= tr.min && vol <= tr.max);
+    if (!t) continue;
+    const list = exemples.get(t.max) ?? [];
+    if (list.length < 3) {
+      list.push(`${fr(L)} × ${fr(l)} m prof. ${fr(prof)} m (${vol} m³)`);
+      exemples.set(t.max, list);
+    }
+  }
+}
 
 const eur = (n: number) => n.toFixed(2);
 const pick = (arts: Article[], debit: number) =>
@@ -85,22 +118,19 @@ const ligne = (a: Article, qte: number): Ligne => ({
   pu: a.prix,
 });
 
+// Chaque tranche est émise comme UN bloc soudé (titre + corps sans ligne vide
+// interne, ≤ ~900 caractères) : le text splitter d'Open WebUI (chunk 1000)
+// garde ainsi 1 tranche = 1 chunk auto-porteur — un chunk « matériel » sans son
+// titre de tranche est inexploitable par le modèle.
 const out: string[] = [];
+const notes: string[] = [];
 out.push(
   "# Abaque filtration — ETS Maria (fichier généré, ne pas éditer à la main)",
   "",
-  `Généré le ${GENERATED_ON} par tools/gen-abaque.ts (moteur hydraulique Peep).`,
-  "DIMENSIONNEMENT PROVISOIRE — logique et paramètres à faire valider par ETS Maria.",
-  "Points à valider avec Maria : formule de puissance pompe (kW écartés de cet " +
-    "abaque, sélection par débit catalogue), aucune marge de sécurité sur le débit, " +
-    `vitesse de filtration ${PARAMS.filteringSpeed} m/h (le Ø de filtre calculé, en note ` +
-    "de tranche, dépasse les filtres catalogue dès 60 m³), temps de filtration " +
-    `${PARAMS.filteringTime} h.`,
-  "",
-  "Usage : une tranche = le matériel complet d'une installation de filtration " +
-    "(pompe + filtre + pièces à sceller + électricité). Recopier les lignes et les " +
-    "totaux tels quels dans le devis, sans recalculer ni substituer. Main d'œuvre " +
-    "et métrage de tuyauterie : hors abaque, à compléter au devis.",
+  `Généré le ${GENERATED_ON} depuis le moteur Peep. DIMENSIONNEMENT PROVISOIRE ` +
+    "— à faire valider par ETS Maria (voir notes en fin de fichier). Une " +
+    "tranche = le matériel complet d'une installation de filtration piscine ; " +
+    "recopier lignes et totaux tels quels dans le devis, sans recalculer.",
 );
 
 for (const t of TRANCHES) {
@@ -129,15 +159,15 @@ for (const t of TRANCHES) {
   const pompe = pick(POMPES, r.adjustedFlowRate);
   const filtre = pick(FILTRES, r.adjustedFlowRate);
 
-  out.push("", `## Bassin ${t.label} — installation filtration complète`, "");
+  const debit = r.adjustedFlowRate.toFixed(1);
 
   if (!pompe || !filtre) {
     out.push(
-      `Hors abaque : débit requis ${
-        r.adjustedFlowRate.toFixed(1)
-      } m³/h au-delà ` +
-        "des filtres à sable du catalogue. Étude atelier obligatoire — aucun " +
-        "chiffrage standard. Dans le devis : [À COMPLÉTER : étude atelier].",
+      "",
+      `## Bassin ${t.label} — installation filtration complète (devis type piscine)\n` +
+        `Volume ${t.label}, débit requis ${debit} m³/h : au-delà des filtres à ` +
+        "sable du catalogue. Étude atelier obligatoire — aucun chiffrage " +
+        "standard. Dans le devis : [À COMPLÉTER : étude atelier].",
     );
     continue;
   }
@@ -158,28 +188,45 @@ for (const t of TRANCHES) {
   const totalHT = lignes.reduce((s, l) => s + l.qte * l.pu, 0);
   const tva = totalHT * 0.2;
 
-  out.push(
-    `Débit de filtration retenu : ${r.adjustedFlowRate.toFixed(1)} m³/h. ` +
-      `Tuyauterie : aspiration Ø${r.suctionDiameter}, refoulement Ø${r.pressureDiameter} ` +
-      "(métrage selon implantation, hors chiffrage).",
-    "",
-    "Matériel (réf | désignation | qté | PU HT € | total HT €) :",
-  );
-  for (const l of lignes) {
-    out.push(
-      `- ${l.ref} | ${l.label} | ${l.qte} | ${eur(l.pu)} | ${
-        eur(l.qte * l.pu)
-      }`,
-    );
+  // Bloc soudé : titre + corps liés par \n simples (aucune ligne vide interne).
+  const ex = exemples.get(t.max);
+  const bloc = [
+    `## Bassin ${t.label} — installation filtration complète (devis type piscine)`,
+    `Volumes couverts : ${volumes(t)} m³.`,
+    ...(ex ? [`Exemples de bassins : ${ex.join(" ; ")}.`] : []),
+    `Volume ${t.label} — débit ${debit} m³/h — aspiration Ø${r.suctionDiameter} / refoulement Ø${r.pressureDiameter}.`,
+    `Matériel tranche ${t.label} (réf | désignation | qté | PU HT € | total HT €) :`,
+    ...lignes.map(
+      (l) => `- ${l.ref} | ${l.label} | ${l.qte} | ${eur(l.pu)} | ${eur(l.qte * l.pu)}`,
+    ),
+    `Totaux ${t.label} : matériel HT ${eur(totalHT)} € ; TVA 20 % ${eur(tva)} € ; TTC ${eur(totalHT + tva)} €.`,
+  ].join("\n");
+  // Limite d'hygiène : une tranche doit rester très en deçà du chunk_size
+  // Open WebUI (3500) pour ne jamais être coupée.
+  if (bloc.length > 1500) {
+    throw new Error(`tranche ${t.label} : ${bloc.length} chars > 1500 (risque de coupe au chunking)`);
   }
-  out.push(
-    `Total matériel HT : ${eur(totalHT)} €`,
-    "TVA 20 % : " + eur(tva) + " €",
-    `Total matériel TTC : ${eur(totalHT + tva)} €`,
-    `Note technique : Ø filtre calculé ${r.filterDiameter} mm, sable calculé ` +
-      `${r.sand} kg (${sacs} sacs de 25 kg).`,
+  out.push("", bloc);
+
+  notes.push(
+    `- ${t.label} : Ø filtre calculé ${r.filterDiameter} mm, sable calculé ` +
+      `${r.sand} kg (${sacs} sacs de 25 kg).` +
+      (r.warnings?.length ? ` Vigilance : ${r.warnings.join(" ; ")}` : ""),
   );
-  for (const w of r.warnings ?? []) out.push(`Point de vigilance : ${w}`);
 }
+
+out.push(
+  "",
+  "## Notes techniques (validation ETS Maria — hors devis)",
+  "",
+  "Points à valider : formule de puissance pompe (kW écartés, sélection par " +
+    "débit catalogue), aucune marge de sécurité sur le débit, vitesse de " +
+    `filtration ${PARAMS.filteringSpeed} m/h (le Ø de filtre calculé ci-dessous dépasse les ` +
+    `filtres catalogue dès 60 m³), temps de filtration ${PARAMS.filteringTime} h. Main ` +
+    "d'œuvre pose et métrage tuyauterie : jamais chiffrés ici, à compléter au " +
+    "devis.",
+  "",
+  ...notes,
+);
 
 console.log(out.join("\n"));
