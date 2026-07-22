@@ -138,8 +138,13 @@ Points qui demandent de lire plusieurs fichiers pour être compris :
 7. **Réglages RAG persistés dans la DB Open WebUI** (volume `open-webui`,
    priment sur les env — les recréer si le volume saute) : template RAG neutre
    devis+mails, query generation avec calcul de volume (transforme « 8 × 4 m
-   prof 1,5 » en « bassin de 48 m³ » avant retrieval), `chunk_size` 1500. Posés
-   via l'API/DB le 2026-07-22 ; l'UI Admin > Settings > Documents les affiche.
+   prof 1,5 » en « bassin de 48 m³ » avant retrieval), `chunk_size` 1500,
+   hybrid search BM25 + reranker `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`
+   (multilingue, seul du cache HF à ~470 Mo — formats onnx/openvino/.bin
+   purgés), `top_k_reranker` 5. Posés via l'API/DB le 2026-07-22 ; l'UI Admin >
+   Settings > Documents les affiche. La collection ne contient **pas**
+   l'abaque (SOUL seul, cf. point 5) : ses chunks saturés de réfs évincent
+   catalogue.md du top-k reranké.
 
 ## Invariants de sécurité — ne pas casser
 

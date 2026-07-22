@@ -77,6 +77,8 @@ services:
       - WEBUI_AUTH=true
       - ENABLE_COMMUNITY_FEATURES=false
       - WEBUI_BANNERS=false
+      # Pas d'A/B testing : masque le pseudo-modèle "Arena Model" du dropdown.
+      - ENABLE_EVALUATION_ARENA_MODELS=false
       - OPENAI_API_BASE_URL=http://hermes:8642/v1
       - OPENAI_API_KEY=${MARIA_API_KEY:?MARIA_API_KEY manquante}
       # RAG natif : embeddings locaux.
