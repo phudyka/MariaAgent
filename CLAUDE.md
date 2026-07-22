@@ -10,10 +10,9 @@ Réponds en français dans ce dépôt (projet francophone, ETS Maria).
 Démo d'**agent commercial sécurisé** : génération de devis d'installation de
 filtration (dimensionnement par abaque pré-calculé) et, en secondaire,
 brouillons de mails (réponse client, relance devis, mail libre) pour ETS Maria
-(pisciniste).
-Interface/RAG/orchestration en local via Docker ; **inférence via l'API
-Mistral** (free tier, `mistral-small-latest` 24B Apache 2.0) — modèle choisi
-pour être exactement ce qu'un Mac mini (M4 Pro 48 Go, cible d'achat) fera
+(pisciniste). Interface/RAG/orchestration en local via Docker ; **inférence via
+l'API Mistral** (free tier, `mistral-small-latest` 24B Apache 2.0) — modèle
+choisi pour être exactement ce qu'un Mac mini (M4 Pro 48 Go, cible d'achat) fera
 tourner en local via Ollama ; tester la cible 24 Go = `open-mistral-nemo` (12B),
 bascule 1 ligne dans `~/.hermes/config.yaml`. `api.mistral.ai` est le seul
 domaine d'inférence de l'allowlist. Mode 100 % local v1 : profil compose `local`
@@ -118,10 +117,10 @@ Points qui demandent de lire plusieurs fichiers pour être compris :
 5. **Le dimensionnement est pré-calculé, jamais calculé par le modèle.**
    `data/abaque-filtration.md` est généré par `tools/gen-abaque.ts` depuis le
    moteur hydraulique de `../Peep` (logique provisoire, à faire valider par
-   Maria — formule puissance pompe connue fausse, sélection par débit
-   catalogue à la place). Le modèle recopie une tranche, totaux compris.
-   Corriger la logique = éditer Peep/`PARAMS`, régénérer, ré-uploader dans
-   Knowledge — ni le skill ni SOUL ne bougent.
+   Maria — formule puissance pompe connue fausse, sélection par débit catalogue
+   à la place). Le modèle recopie une tranche, totaux compris. Corriger la
+   logique = éditer Peep/`PARAMS`, régénérer, ré-uploader dans Knowledge — ni le
+   skill ni SOUL ne bougent.
 
 ## Invariants de sécurité — ne pas casser
 

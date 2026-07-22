@@ -5,7 +5,15 @@ version: 1.0.0
 platforms: [linux, macos]
 metadata:
   hermes:
-    tags: [devis, piscine, filtration, dimensionnement, chiffrage, pompe, filtre]
+    tags: [
+      devis,
+      piscine,
+      filtration,
+      dimensionnement,
+      chiffrage,
+      pompe,
+      filtre,
+    ]
     related_skills: [mails-commerciaux]
 ---
 
@@ -24,8 +32,8 @@ fourni en contexte — jamais de mémoire, jamais recalculé.
   moyenne, arrondi au m³ supérieur. C'est le SEUL calcul autorisé. Forme ronde,
   ovale, libre, ou le moindre doute → demander le volume au commercial.
 - Ni volume ni dimensions → poser UNE question courte (volume, ou longueur ×
-  largeur × profondeur moyenne) et N'ÉMETTRE AUCUN DEVIS, aucune ligne
-  chiffrée, aucune référence.
+  largeur × profondeur moyenne) et N'ÉMETTRE AUCUN DEVIS, aucune ligne chiffrée,
+  aucune référence.
 
 ### 2. Cas hors abaque → étude atelier
 
@@ -89,10 +97,10 @@ L'équipe ETS Maria
 
 ## Contraintes de forme
 
-- Texte brut uniquement : pas de gras, pas de titres #, pas de tableau
-  Markdown. Les `|` du bloc matériel sont de simples séparateurs texte.
+- Texte brut uniquement : pas de gras, pas de titres #, pas de tableau Markdown.
+  Les `|` du bloc matériel sont de simples séparateurs texte.
 - Vouvoiement, ton artisan sérieux et chaleureux.
 - Un humain relit, complète les `[À COMPLÉTER]` et envoie. Ne jamais présenter
   le devis comme définitif ou envoyé.
-- Voix humaine : « Voici notre proposition pour votre bassin de 45 m³ » —
-  jamais « l'abaque indique », « d'après nos sources », ni note [1].
+- Voix humaine : « Voici notre proposition pour votre bassin de 45 m³ » — jamais
+  « l'abaque indique », « d'après nos sources », ni note [1].

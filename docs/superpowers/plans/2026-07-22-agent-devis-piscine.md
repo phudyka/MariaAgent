@@ -1,35 +1,64 @@
 # Agent devis piscine — plan d'implémentation
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use
+> superpowers:subagent-driven-development (recommended) or
+> superpowers:executing-plans to implement this plan task-by-task. Steps use
+> checkbox (`- [ ]`) syntax for tracking.
 
-**Goal :** l'agent ETS Maria produit des devis d'installation de filtration (pompe + filtre + pièces) depuis Open WebUI, dimensionnés par un abaque généré depuis le moteur hydraulique Peep, sans jamais inventer référence ni prix.
+**Goal :** l'agent ETS Maria produit des devis d'installation de filtration
+(pompe + filtre + pièces) depuis Open WebUI, dimensionnés par un abaque généré
+depuis le moteur hydraulique Peep, sans jamais inventer référence ni prix.
 
-**Architecture :** un script one-shot (`tools/gen-abaque.ts`, jamais déployé) exécute `runHydraulicEngine` de `~/Peep` sur 9 tranches de volume et émet `data/abaque-filtration.md` (1 tranche = 1 chunk RAG autonome, totaux pré-calculés). Un nouveau skill Hermes `devis-piscine` impose la procédure (volume bloquant, recopie de tranche, template texte brut). Le LLM ne calcule jamais : il recopie. Spec : `docs/superpowers/specs/2026-07-22-agent-devis-piscine-design.md`.
+**Architecture :** un script one-shot (`tools/gen-abaque.ts`, jamais déployé)
+exécute `runHydraulicEngine` de `~/Peep` sur 9 tranches de volume et émet
+`data/abaque-filtration.md` (1 tranche = 1 chunk RAG autonome, totaux
+pré-calculés). Un nouveau skill Hermes `devis-piscine` impose la procédure
+(volume bloquant, recopie de tranche, template texte brut). Le LLM ne calcule
+jamais : il recopie. Spec :
+`docs/superpowers/specs/2026-07-22-agent-devis-piscine-design.md`.
 
-**Tech stack :** TypeScript exécuté via `npx tsx` (poste dev uniquement), markdown (skills/SOUL/données RAG), bash (eval).
+**Tech stack :** TypeScript exécuté via `npx tsx` (poste dev uniquement),
+markdown (skills/SOUL/données RAG), bash (eval).
 
 ## Global Constraints
 
-- Invariants sécurité intouchés : toolset `api_server: []`, `docker-compose.yml`, `proxy/filter`, un seul port publié. Aucune tâche ne les modifie.
+- Invariants sécurité intouchés : toolset `api_server: []`,
+  `docker-compose.yml`, `proxy/filter`, un seul port publié. Aucune tâche ne les
+  modifie.
 - Sortie agent : texte brut (jamais de Markdown dans les devis/mails générés).
-- Anti-invention absolue : toute donnée absente du contexte → `[À COMPLÉTER : nature]`.
+- Anti-invention absolue : toute donnée absente du contexte →
+  `[À COMPLÉTER : nature]`.
 - Français partout (docs, skill, SOUL, messages de commit descriptifs acceptés).
-- Prix abaque/catalogue alignés sur `data/catalogue-sage100.csv` (source de vérité mock).
-- `hermes/` (dépôt) n'est actif qu'après recopie vers `~/.hermes/` (setup.sh) + restart hermes — l'éval (Task 5) fait ce déploiement.
-- mdformat peut reformater les `.md` du dépôt : les blocs à préserver au caractère près (template devis, exemples) vont dans des fences ` ``` `.
-- Le moteur Peep (`../Peep/backend/src/services/hydraulicEngine.ts`) n'est PAS modifié.
+- Prix abaque/catalogue alignés sur `data/catalogue-sage100.csv` (source de
+  vérité mock).
+- `hermes/` (dépôt) n'est actif qu'après recopie vers `~/.hermes/` (setup.sh) +
+  restart hermes — l'éval (Task 5) fait ce déploiement.
+- mdformat peut reformater les `.md` du dépôt : les blocs à préserver au
+  caractère près (template devis, exemples) vont dans des fences `` ``` ``.
+- Le moteur Peep (`../Peep/backend/src/services/hydraulicEngine.ts`) n'est PAS
+  modifié.
 
 ---
 
 ### Task 1 : générateur d'abaque `tools/gen-abaque.ts` + `data/abaque-filtration.md`
 
 **Files:**
+
 - Create: `tools/gen-abaque.ts`
 - Create: `data/abaque-filtration.md` (généré par le script, commité)
 
 **Interfaces:**
-- Consomme : `runHydraulicEngine(input: PoolInput, params: CalcParams): InstallationResult` importé de `../../Peep/backend/src/services/hydraulicEngine` (fonction pure, zéro import interne — chemin relatif depuis `tools/` : MariaAgent et Peep sont frères dans `/home/phudyka`).
-- Produit : `data/abaque-filtration.md` — sections `## Bassin <label> — installation filtration complète`, lignes `- REF | désignation | qté | PU HT | total HT`, totaux `Total matériel HT / TVA 20 % / Total matériel TTC`. Les Tasks 3 (skill) et 6 (README) référencent ce fichier par ce nom exact.
+
+- Consomme :
+  `runHydraulicEngine(input: PoolInput, params: CalcParams): InstallationResult`
+  importé de `../../Peep/backend/src/services/hydraulicEngine` (fonction pure,
+  zéro import interne — chemin relatif depuis `tools/` : MariaAgent et Peep sont
+  frères dans `/home/phudyka`).
+- Produit : `data/abaque-filtration.md` — sections
+  `## Bassin <label> — installation filtration complète`, lignes
+  `- REF | désignation | qté | PU HT | total HT`, totaux
+  `Total matériel HT / TVA 20 % / Total matériel TTC`. Les Tasks 3 (skill) et 6
+  (README) référencent ce fichier par ce nom exact.
 
 - [ ] **Step 1 : écrire le script complet**
 
@@ -41,24 +70,24 @@ Créer `tools/gen-abaque.ts` avec exactement ce contenu :
 // Jamais déployé, jamais dans l'image Docker : le moteur Peep tourne ici
 // (poste dev), pas chez Maria. L'agent ne voit que le markdown généré.
 import {
-	runHydraulicEngine,
-	type CalcParams,
-	type PoolInput,
+  type CalcParams,
+  type PoolInput,
+  runHydraulicEngine,
 } from "../../Peep/backend/src/services/hydraulicEngine";
 
 // ─── Paramètres de calcul — LE point d'édition quand Maria corrige ────────────
 // Défauts Peep résidentiels. Après correction : éditer ici, régénérer,
 // ré-uploader l'abaque dans la collection Knowledge (cycle spec §6).
 const PARAMS: CalcParams = {
-	filteringTime: 6, // h
-	hmt: 8, // m
-	pumpEfficiency: 0.6,
-	m3PerSkimmer: 25, // m³ par skimmer
-	filteringSpeed: 30, // m/h
-	sandPerM2: 300, // kg par m² de surface filtrante
-	flowMultiplier: 1, // skimmer résidentiel, aucune marge
-	spaFlowAddition: 0,
-	counterCurrentAddition: 0,
+  filteringTime: 6, // h
+  hmt: 8, // m
+  pumpEfficiency: 0.6,
+  m3PerSkimmer: 25, // m³ par skimmer
+  filteringSpeed: 30, // m/h
+  sandPerM2: 300, // kg par m² de surface filtrante
+  flowMultiplier: 1, // skimmer résidentiel, aucune marge
+  spaFlowAddition: 0,
+  counterCurrentAddition: 0,
 };
 
 // Date de génération figée à la main (pas de Date.now : sortie reproductible).
@@ -70,133 +99,154 @@ const GENERATED_ON = "2026-07-22";
 type Article = { ref: string; label: string; prix: number; debit?: number };
 
 const POMPES: Article[] = [
-	{ ref: "POMP-075", label: "Pompe filtration 0,75 CV", prix: 290, debit: 12 },
-	{ ref: "POMP-100", label: "Pompe filtration 1,0 CV", prix: 340, debit: 15 },
-	{ ref: "POMP-150", label: "Pompe filtration 1,5 CV", prix: 420, debit: 21 },
-	{ ref: "POMP-200", label: "Pompe filtration 2,0 CV", prix: 560, debit: 28 },
+  { ref: "POMP-075", label: "Pompe filtration 0,75 CV", prix: 290, debit: 12 },
+  { ref: "POMP-100", label: "Pompe filtration 1,0 CV", prix: 340, debit: 15 },
+  { ref: "POMP-150", label: "Pompe filtration 1,5 CV", prix: 420, debit: 21 },
+  { ref: "POMP-200", label: "Pompe filtration 2,0 CV", prix: 560, debit: 28 },
 ];
 const FILTRES: Article[] = [
-	{ ref: "FILT-400", label: "Filtre à sable Ø400", prix: 240, debit: 6 },
-	{ ref: "FILT-500", label: "Filtre à sable Ø500", prix: 310, debit: 10 },
-	{ ref: "FILT-600", label: "Filtre à sable Ø600", prix: 430, debit: 14 },
+  { ref: "FILT-400", label: "Filtre à sable Ø400", prix: 240, debit: 6 },
+  { ref: "FILT-500", label: "Filtre à sable Ø500", prix: 310, debit: 10 },
+  { ref: "FILT-600", label: "Filtre à sable Ø600", prix: 430, debit: 14 },
 ];
 const ART = {
-	sable: { ref: "SABL-25", label: "Sable filtrant 25 kg", prix: 18 },
-	skimmer: { ref: "SKIM-STD", label: "Skimmer standard grande meurtrière", prix: 58 },
-	buse: { ref: "BUSE-REF", label: "Buse de refoulement orientable", prix: 12 },
-	vanne: { ref: "VANN-2V", label: "Vanne d'arrêt 2 voies Ø50", prix: 48 },
-	union: { ref: "UNION-50", label: "Raccord union Ø50 à coller", prix: 9 },
-	mano: { ref: "MANO-FILT", label: "Manomètre de filtre", prix: 24 },
-	panier: { ref: "PREF-BASK", label: "Panier de préfiltre pompe", prix: 19 },
-	coffret: { ref: "COFF-ELEC", label: "Coffret électrique filtration", prix: 165 },
+  sable: { ref: "SABL-25", label: "Sable filtrant 25 kg", prix: 18 },
+  skimmer: {
+    ref: "SKIM-STD",
+    label: "Skimmer standard grande meurtrière",
+    prix: 58,
+  },
+  buse: { ref: "BUSE-REF", label: "Buse de refoulement orientable", prix: 12 },
+  vanne: { ref: "VANN-2V", label: "Vanne d'arrêt 2 voies Ø50", prix: 48 },
+  union: { ref: "UNION-50", label: "Raccord union Ø50 à coller", prix: 9 },
+  mano: { ref: "MANO-FILT", label: "Manomètre de filtre", prix: 24 },
+  panier: { ref: "PREF-BASK", label: "Panier de préfiltre pompe", prix: 19 },
+  coffret: {
+    ref: "COFF-ELEC",
+    label: "Coffret électrique filtration",
+    prix: 165,
+  },
 };
 
 const TRANCHES = [
-	{ max: 20, label: "jusqu'à 20 m³" },
-	{ max: 30, label: "21 à 30 m³" },
-	{ max: 40, label: "31 à 40 m³" },
-	{ max: 50, label: "41 à 50 m³" },
-	{ max: 60, label: "51 à 60 m³" },
-	{ max: 70, label: "61 à 70 m³" },
-	{ max: 80, label: "71 à 80 m³" },
-	{ max: 90, label: "81 à 90 m³" },
-	{ max: 100, label: "91 à 100 m³" },
+  { max: 20, label: "jusqu'à 20 m³" },
+  { max: 30, label: "21 à 30 m³" },
+  { max: 40, label: "31 à 40 m³" },
+  { max: 50, label: "41 à 50 m³" },
+  { max: 60, label: "51 à 60 m³" },
+  { max: 70, label: "61 à 70 m³" },
+  { max: 80, label: "71 à 80 m³" },
+  { max: 90, label: "81 à 90 m³" },
+  { max: 100, label: "91 à 100 m³" },
 ];
 
 const eur = (n: number) => n.toFixed(2);
 const pick = (arts: Article[], debit: number) =>
-	arts.find((a) => (a.debit ?? 0) >= debit);
+  arts.find((a) => (a.debit ?? 0) >= debit);
 
 type Ligne = { ref: string; label: string; qte: number; pu: number };
 const ligne = (a: Article, qte: number): Ligne => ({
-	ref: a.ref,
-	label: a.label,
-	qte,
-	pu: a.prix,
+  ref: a.ref,
+  label: a.label,
+  qte,
+  pu: a.prix,
 });
 
 const out: string[] = [];
 out.push(
-	"# Abaque filtration — ETS Maria (fichier généré, ne pas éditer à la main)",
-	"",
-	`Généré le ${GENERATED_ON} par tools/gen-abaque.ts (moteur hydraulique Peep).`,
-	"DIMENSIONNEMENT PROVISOIRE — logique et paramètres à faire valider par ETS Maria.",
-	"Points à valider avec Maria : formule de puissance pompe (kW écartés de cet " +
-		"abaque, sélection par débit catalogue), aucune marge de sécurité sur le débit, " +
-		`vitesse de filtration ${PARAMS.filteringSpeed} m/h (le Ø de filtre calculé, en note ` +
-		"de tranche, dépasse les filtres catalogue dès 60 m³), temps de filtration " +
-		`${PARAMS.filteringTime} h.`,
-	"",
-	"Usage : une tranche = le matériel complet d'une installation de filtration " +
-		"(pompe + filtre + pièces à sceller + électricité). Recopier les lignes et les " +
-		"totaux tels quels dans le devis, sans recalculer ni substituer. Main d'œuvre " +
-		"et métrage de tuyauterie : hors abaque, à compléter au devis.",
+  "# Abaque filtration — ETS Maria (fichier généré, ne pas éditer à la main)",
+  "",
+  `Généré le ${GENERATED_ON} par tools/gen-abaque.ts (moteur hydraulique Peep).`,
+  "DIMENSIONNEMENT PROVISOIRE — logique et paramètres à faire valider par ETS Maria.",
+  "Points à valider avec Maria : formule de puissance pompe (kW écartés de cet " +
+    "abaque, sélection par débit catalogue), aucune marge de sécurité sur le débit, " +
+    `vitesse de filtration ${PARAMS.filteringSpeed} m/h (le Ø de filtre calculé, en note ` +
+    "de tranche, dépasse les filtres catalogue dès 60 m³), temps de filtration " +
+    `${PARAMS.filteringTime} h.`,
+  "",
+  "Usage : une tranche = le matériel complet d'une installation de filtration " +
+    "(pompe + filtre + pièces à sceller + électricité). Recopier les lignes et les " +
+    "totaux tels quels dans le devis, sans recalculer ni substituer. Main d'œuvre " +
+    "et métrage de tuyauterie : hors abaque, à compléter au devis.",
 );
 
 for (const t of TRANCHES) {
-	const input: PoolInput = {
-		shape: "FREEFORM",
-		// surfaceArea = volume cible avec profondeur moyenne 1 m → volume = surface.
-		shapeParams: { shape: "FREEFORM", surfaceArea: t.max },
-		depthShallow: 1,
-		depthDeep: 1,
-		length: 0, // jamais lus par le moteur (fallback planGenerator uniquement)
-		width: 0,
-		type: "SKIMMER",
-		usage: "RESIDENTIAL",
-		options: { heating: false, spa: false, counterCurrent: false, lighting: false },
-	};
-	const r = runHydraulicEngine(input, PARAMS);
-	if (Math.round(r.volume) !== t.max)
-		throw new Error(`volume moteur ${r.volume} ≠ cible ${t.max}`);
+  const input: PoolInput = {
+    shape: "FREEFORM",
+    // surfaceArea = volume cible avec profondeur moyenne 1 m → volume = surface.
+    shapeParams: { shape: "FREEFORM", surfaceArea: t.max },
+    depthShallow: 1,
+    depthDeep: 1,
+    length: 0, // jamais lus par le moteur (fallback planGenerator uniquement)
+    width: 0,
+    type: "SKIMMER",
+    usage: "RESIDENTIAL",
+    options: {
+      heating: false,
+      spa: false,
+      counterCurrent: false,
+      lighting: false,
+    },
+  };
+  const r = runHydraulicEngine(input, PARAMS);
+  if (Math.round(r.volume) !== t.max) {
+    throw new Error(`volume moteur ${r.volume} ≠ cible ${t.max}`);
+  }
 
-	const pompe = pick(POMPES, r.adjustedFlowRate);
-	const filtre = pick(FILTRES, r.adjustedFlowRate);
+  const pompe = pick(POMPES, r.adjustedFlowRate);
+  const filtre = pick(FILTRES, r.adjustedFlowRate);
 
-	out.push("", `## Bassin ${t.label} — installation filtration complète`, "");
+  out.push("", `## Bassin ${t.label} — installation filtration complète`, "");
 
-	if (!pompe || !filtre) {
-		out.push(
-			`Hors abaque : débit requis ${r.adjustedFlowRate.toFixed(1)} m³/h au-delà ` +
-				"des filtres à sable du catalogue. Étude atelier obligatoire — aucun " +
-				"chiffrage standard. Dans le devis : [À COMPLÉTER : étude atelier].",
-		);
-		continue;
-	}
+  if (!pompe || !filtre) {
+    out.push(
+      `Hors abaque : débit requis ${
+        r.adjustedFlowRate.toFixed(1)
+      } m³/h au-delà ` +
+        "des filtres à sable du catalogue. Étude atelier obligatoire — aucun " +
+        "chiffrage standard. Dans le devis : [À COMPLÉTER : étude atelier].",
+    );
+    continue;
+  }
 
-	const sacs = Math.ceil(r.sand / 25);
-	const lignes: Ligne[] = [
-		ligne(pompe, 1),
-		ligne(filtre, 1),
-		ligne(ART.sable, sacs),
-		ligne(ART.skimmer, r.skimmers),
-		ligne(ART.buse, r.returns),
-		ligne(ART.vanne, r.valves),
-		ligne(ART.union, 2),
-		ligne(ART.mano, 1),
-		ligne(ART.panier, 1),
-		ligne(ART.coffret, 1),
-	];
-	const totalHT = lignes.reduce((s, l) => s + l.qte * l.pu, 0);
-	const tva = totalHT * 0.2;
+  const sacs = Math.ceil(r.sand / 25);
+  const lignes: Ligne[] = [
+    ligne(pompe, 1),
+    ligne(filtre, 1),
+    ligne(ART.sable, sacs),
+    ligne(ART.skimmer, r.skimmers),
+    ligne(ART.buse, r.returns),
+    ligne(ART.vanne, r.valves),
+    ligne(ART.union, 2),
+    ligne(ART.mano, 1),
+    ligne(ART.panier, 1),
+    ligne(ART.coffret, 1),
+  ];
+  const totalHT = lignes.reduce((s, l) => s + l.qte * l.pu, 0);
+  const tva = totalHT * 0.2;
 
-	out.push(
-		`Débit de filtration retenu : ${r.adjustedFlowRate.toFixed(1)} m³/h. ` +
-			`Tuyauterie : aspiration Ø${r.suctionDiameter}, refoulement Ø${r.pressureDiameter} ` +
-			"(métrage selon implantation, hors chiffrage).",
-		"",
-		"Matériel (réf | désignation | qté | PU HT € | total HT €) :",
-	);
-	for (const l of lignes)
-		out.push(`- ${l.ref} | ${l.label} | ${l.qte} | ${eur(l.pu)} | ${eur(l.qte * l.pu)}`);
-	out.push(
-		`Total matériel HT : ${eur(totalHT)} €`,
-		"TVA 20 % : " + eur(tva) + " €",
-		`Total matériel TTC : ${eur(totalHT + tva)} €`,
-		`Note technique : Ø filtre calculé ${r.filterDiameter} mm, sable calculé ` +
-			`${r.sand} kg (${sacs} sacs de 25 kg).`,
-	);
-	for (const w of r.warnings ?? []) out.push(`Point de vigilance : ${w}`);
+  out.push(
+    `Débit de filtration retenu : ${r.adjustedFlowRate.toFixed(1)} m³/h. ` +
+      `Tuyauterie : aspiration Ø${r.suctionDiameter}, refoulement Ø${r.pressureDiameter} ` +
+      "(métrage selon implantation, hors chiffrage).",
+    "",
+    "Matériel (réf | désignation | qté | PU HT € | total HT €) :",
+  );
+  for (const l of lignes) {
+    out.push(
+      `- ${l.ref} | ${l.label} | ${l.qte} | ${eur(l.pu)} | ${
+        eur(l.qte * l.pu)
+      }`,
+    );
+  }
+  out.push(
+    `Total matériel HT : ${eur(totalHT)} €`,
+    "TVA 20 % : " + eur(tva) + " €",
+    `Total matériel TTC : ${eur(totalHT + tva)} €`,
+    `Note technique : Ø filtre calculé ${r.filterDiameter} mm, sable calculé ` +
+      `${r.sand} kg (${sacs} sacs de 25 kg).`,
+  );
+  for (const w of r.warnings ?? []) out.push(`Point de vigilance : ${w}`);
 }
 
 console.log(out.join("\n"));
@@ -208,25 +258,29 @@ console.log(out.join("\n"));
 cd /home/phudyka/MariaAgent && npx -y tsx tools/gen-abaque.ts > data/abaque-filtration.md
 ```
 
-(`-y` : MariaAgent n'a pas de package.json, npx installe tsx à la volée sans prompt.)
+(`-y` : MariaAgent n'a pas de package.json, npx installe tsx à la volée sans
+prompt.)
 
-Attendu : exit 0, aucun message d'erreur (le `throw` volume est le self-check). Si `npx tsx` échoue en résolution du chemin Peep, vérifier que `/home/phudyka/Peep/backend/src/services/hydraulicEngine.ts` existe.
+Attendu : exit 0, aucun message d'erreur (le `throw` volume est le self-check).
+Si `npx tsx` échoue en résolution du chemin Peep, vérifier que
+`/home/phudyka/Peep/backend/src/services/hydraulicEngine.ts` existe.
 
 - [ ] **Step 3 : vérifier les valeurs générées contre les attendus**
 
-Valeurs calculées à la main depuis le moteur (débit = borne haute / 6 h ; sélection par débit catalogue) :
+Valeurs calculées à la main depuis le moteur (débit = borne haute / 6 h ;
+sélection par débit catalogue) :
 
-| Tranche | Débit | Pompe | Filtre | Sacs sable | Skim. | Buses | Vannes | Total HT | TTC |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ≤ 20 | 3,3 | POMP-075 | FILT-400 | 2 | 2 | 4 | 5 | 1196.00 | 1435.20 |
-| 21–30 | 5,0 | POMP-075 | FILT-400 | 2 | 2 | 4 | 5 | 1196.00 | 1435.20 |
-| 31–40 | 6,7 | POMP-075 | FILT-500 | 3 | 2 | 4 | 5 | 1284.00 | 1540.80 |
-| 41–50 | 8,3 | POMP-075 | FILT-500 | 4 | 2 | 4 | 5 | 1302.00 | 1562.40 |
-| 51–60 | 10,0 | POMP-075 | FILT-500 | 4 | 3 | 6 | 6 | 1432.00 | 1718.40 |
-| 61–70 | 11,7 | POMP-075 | FILT-600 | 5 | 3 | 6 | 6 | 1570.00 | 1884.00 |
-| 71–80 | 13,3 | POMP-100 | FILT-600 | 6 | 4 | 8 | 7 | 1768.00 | 2121.60 |
-| 81–90 | 15,0 | étude atelier | | | | | | | |
-| 91–100 | 16,7 | étude atelier | | | | | | | |
+| Tranche | Débit | Pompe         | Filtre   | Sacs sable | Skim. | Buses | Vannes | Total HT | TTC     |
+| ------- | ----- | ------------- | -------- | ---------- | ----- | ----- | ------ | -------- | ------- |
+| ≤ 20    | 3,3   | POMP-075      | FILT-400 | 2          | 2     | 4     | 5      | 1196.00  | 1435.20 |
+| 21–30   | 5,0   | POMP-075      | FILT-400 | 2          | 2     | 4     | 5      | 1196.00  | 1435.20 |
+| 31–40   | 6,7   | POMP-075      | FILT-500 | 3          | 2     | 4     | 5      | 1284.00  | 1540.80 |
+| 41–50   | 8,3   | POMP-075      | FILT-500 | 4          | 2     | 4     | 5      | 1302.00  | 1562.40 |
+| 51–60   | 10,0  | POMP-075      | FILT-500 | 4          | 3     | 6     | 6      | 1432.00  | 1718.40 |
+| 61–70   | 11,7  | POMP-075      | FILT-600 | 5          | 3     | 6     | 6      | 1570.00  | 1884.00 |
+| 71–80   | 13,3  | POMP-100      | FILT-600 | 6          | 4     | 8     | 7      | 1768.00  | 2121.60 |
+| 81–90   | 15,0  | étude atelier |          |            |       |       |        |          |         |
+| 91–100  | 16,7  | étude atelier |          |            |       |       |        |          |         |
 
 ```bash
 grep -c '^## Bassin' data/abaque-filtration.md          # attendu : 9
@@ -234,7 +288,9 @@ grep -c 'étude atelier' data/abaque-filtration.md        # attendu : ≥ 2
 grep 'Total matériel HT' data/abaque-filtration.md
 ```
 
-Attendu pour le dernier grep, dans l'ordre : `1196.00`, `1196.00`, `1284.00`, `1302.00`, `1432.00`, `1570.00`, `1768.00` (7 lignes). Toute divergence = bug de mapping → corriger le script, PAS l'abaque à la main.
+Attendu pour le dernier grep, dans l'ordre : `1196.00`, `1196.00`, `1284.00`,
+`1302.00`, `1432.00`, `1570.00`, `1768.00` (7 lignes). Toute divergence = bug de
+mapping → corriger le script, PAS l'abaque à la main.
 
 - [ ] **Step 4 : commit**
 
@@ -254,18 +310,27 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 2 : références manquantes dans `data/catalogue.md`
 
 **Files:**
+
 - Modify: `data/catalogue.md` (section « Filtration — pompes & filtres »)
 
 **Interfaces:**
-- Produit : toute référence citée par `data/abaque-filtration.md` existe dans `data/catalogue.md` (invariant vérifié au Step 2). SKIM-STD, BUSE-REF, COFF-ELEC, TUYAU-50 y sont déjà (section Plomberie).
+
+- Produit : toute référence citée par `data/abaque-filtration.md` existe dans
+  `data/catalogue.md` (invariant vérifié au Step 2). SKIM-STD, BUSE-REF,
+  COFF-ELEC, TUYAU-50 y sont déjà (section Plomberie).
 
 - [ ] **Step 1 : ajouter les 6 références absentes**
 
-Lire `data/catalogue.md`, localiser la section `## Filtration — pompes & filtres`. Insérer (en respectant le format existant `- REF | désignation | marque | prix | TVA | stock | dispo | notes`) :
+Lire `data/catalogue.md`, localiser la section
+`## Filtration — pompes & filtres`. Insérer (en respectant le format existant
+`- REF | désignation | marque | prix | TVA | stock | dispo | notes`) :
 
-- `- POMP-075 | Pompe filtration 0,75 CV | Hayward | 290.00 | 20 % | 3 | En stock | mono 230V, 12 m³/h` — juste avant POMP-100 (ordre croissant).
-- `- FILT-400 | Filtre à sable Ø400 | Hayward | 240.00 | 20 % | 4 | En stock | 6 m³/h, vanne 6 voies` — juste avant FILT-500.
-- Après la ligne SABL-25 (fin de section, attention au wrap mdformat sur 2 lignes) :
+- `- POMP-075 | Pompe filtration 0,75 CV | Hayward | 290.00 | 20 % | 3 | En stock | mono 230V, 12 m³/h`
+  — juste avant POMP-100 (ordre croissant).
+- `- FILT-400 | Filtre à sable Ø400 | Hayward | 240.00 | 20 % | 4 | En stock | 6 m³/h, vanne 6 voies`
+  — juste avant FILT-500.
+- Après la ligne SABL-25 (fin de section, attention au wrap mdformat sur 2
+  lignes) :
 
 ```
 - VANN-2V | Vanne d'arrêt 2 voies Ø50 | AstralPool | 48.00 | 20 % | 12 | En stock | robinetterie circuit
@@ -301,11 +366,15 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 3 : skill `hermes/skills/devis-piscine/SKILL.md`
 
 **Files:**
+
 - Create: `hermes/skills/devis-piscine/SKILL.md`
 
 **Interfaces:**
-- Consomme : le format de `data/abaque-filtration.md` (Task 1) — sections « Bassin … », lignes matériel, totaux pré-calculés.
-- Produit : le template devis (fence) que SOUL.md (Task 4) référence par « le template du skill devis-piscine ».
+
+- Consomme : le format de `data/abaque-filtration.md` (Task 1) — sections «
+  Bassin … », lignes matériel, totaux pré-calculés.
+- Produit : le template devis (fence) que SOUL.md (Task 4) référence par « le
+  template du skill devis-piscine ».
 
 - [ ] **Step 1 : créer le skill complet**
 
@@ -319,7 +388,15 @@ version: 1.0.0
 platforms: [linux, macos]
 metadata:
   hermes:
-    tags: [devis, piscine, filtration, dimensionnement, chiffrage, pompe, filtre]
+    tags: [
+      devis,
+      piscine,
+      filtration,
+      dimensionnement,
+      chiffrage,
+      pompe,
+      filtre,
+    ]
     related_skills: [mails-commerciaux]
 ---
 
@@ -338,8 +415,8 @@ fourni en contexte — jamais de mémoire, jamais recalculé.
   moyenne, arrondi au m³ supérieur. C'est le SEUL calcul autorisé. Forme ronde,
   ovale, libre, ou le moindre doute → demander le volume au commercial.
 - Ni volume ni dimensions → poser UNE question courte (volume, ou longueur ×
-  largeur × profondeur moyenne) et N'ÉMETTRE AUCUN DEVIS, aucune ligne
-  chiffrée, aucune référence.
+  largeur × profondeur moyenne) et N'ÉMETTRE AUCUN DEVIS, aucune ligne chiffrée,
+  aucune référence.
 
 ### 2. Cas hors abaque → étude atelier
 
@@ -403,13 +480,13 @@ L'équipe ETS Maria
 
 ## Contraintes de forme
 
-- Texte brut uniquement : pas de gras, pas de titres #, pas de tableau
-  Markdown. Les `|` du bloc matériel sont de simples séparateurs texte.
+- Texte brut uniquement : pas de gras, pas de titres #, pas de tableau Markdown.
+  Les `|` du bloc matériel sont de simples séparateurs texte.
 - Vouvoiement, ton artisan sérieux et chaleureux.
 - Un humain relit, complète les `[À COMPLÉTER]` et envoie. Ne jamais présenter
   le devis comme définitif ou envoyé.
-- Voix humaine : « Voici notre proposition pour votre bassin de 45 m³ » —
-  jamais « l'abaque indique », « d'après nos sources », ni note [1].
+- Voix humaine : « Voici notre proposition pour votre bassin de 45 m³ » — jamais
+  « l'abaque indique », « d'après nos sources », ni note [1].
 ````
 
 - [ ] **Step 2 : vérifier le frontmatter**
@@ -418,7 +495,9 @@ L'équipe ETS Maria
 head -12 hermes/skills/devis-piscine/SKILL.md
 ```
 
-Attendu : frontmatter YAML identique en structure à `hermes/skills/mails-commerciaux/SKILL.md` (name, description, version, platforms, metadata.hermes.tags).
+Attendu : frontmatter YAML identique en structure à
+`hermes/skills/mails-commerciaux/SKILL.md` (name, description, version,
+platforms, metadata.hermes.tags).
 
 - [ ] **Step 3 : commit**
 
@@ -437,15 +516,22 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 4 : `hermes/SOUL.md` — le devis devient la tâche n° 1
 
 **Files:**
-- Modify: `hermes/SOUL.md` (section « ## Tâches — brouillons de mails commerciaux », lignes ~60–77)
+
+- Modify: `hermes/SOUL.md` (section « ## Tâches — brouillons de mails
+  commerciaux », lignes ~60–77)
 
 **Interfaces:**
-- Consomme : l'existence du skill `devis-piscine` (Task 3) et de l'abaque (Task 1).
-- Produit : SOUL avec deux tâches ordonnées ; la section « Voix humaine » et tout le reste (règles absolues, coordonnées, signature) inchangés.
+
+- Consomme : l'existence du skill `devis-piscine` (Task 3) et de l'abaque (Task
+  1).
+- Produit : SOUL avec deux tâches ordonnées ; la section « Voix humaine » et
+  tout le reste (règles absolues, coordonnées, signature) inchangés.
 
 - [ ] **Step 1 : remplacer la section Tâches**
 
-Dans `hermes/SOUL.md`, remplacer le bloc allant du titre `## Tâches — brouillons de mails commerciaux` jusqu'à la ligne avant `**Voix humaine` (exclue) par :
+Dans `hermes/SOUL.md`, remplacer le bloc allant du titre
+`## Tâches — brouillons de mails commerciaux` jusqu'à la ligne avant
+`**Voix humaine` (exclue) par :
 
 ```markdown
 ## Tâches
@@ -455,8 +541,8 @@ Dans `hermes/SOUL.md`, remplacer le bloc allant du titre `## Tâches — brouill
 Tu produis un devis en texte brut, prêt à relire — jamais envoyé. Règles :
 
 - Le volume du bassin est OBLIGATOIRE. Absent : demande-le (ou longueur ×
-  largeur × profondeur moyenne — seul calcul autorisé, arrondi au m³
-  supérieur) et n'émets AUCUN devis, aucune référence, aucun prix.
+  largeur × profondeur moyenne — seul calcul autorisé, arrondi au m³ supérieur)
+  et n'émets AUCUN devis, aucune référence, aucun prix.
 - Le matériel vient de la tranche d'abaque de dimensionnement fournie en
   contexte, recopiée telle quelle (références, quantités, prix, totaux). Rien
   n'est recalculé ni ajouté hors abaque/catalogue fournis.
@@ -488,7 +574,9 @@ contexte variable (client, devis, extraits catalogue) est fourni automatiquement
 ; travaille à partir de lui.
 ```
 
-La sous-section 2 reprend mot pour mot le contenu actuel des mails — seule la hiérarchie change (`##` → `###`, devis inséré avant). Le paragraphe `**Voix humaine**` qui suit reste tel quel (il s'applique aux deux tâches).
+La sous-section 2 reprend mot pour mot le contenu actuel des mails — seule la
+hiérarchie change (`##` → `###`, devis inséré avant). Le paragraphe
+`**Voix humaine**` qui suit reste tel quel (il s'applique aux deux tâches).
 
 - [ ] **Step 2 : vérifier le diff**
 
@@ -496,7 +584,8 @@ La sous-section 2 reprend mot pour mot le contenu actuel des mails — seule la 
 git diff hermes/SOUL.md
 ```
 
-Attendu : uniquement la section Tâches touchée ; règles absolues (1–6), coordonnées, signature, « Voix humaine » intacts.
+Attendu : uniquement la section Tâches touchée ; règles absolues (1–6),
+coordonnées, signature, « Voix humaine » intacts.
 
 - [ ] **Step 3 : commit**
 
@@ -515,15 +604,20 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 5 : éval devis + déploiement local + éval complète verte
 
 **Files:**
-- Modify: `eval.sh` (insérer les cas 3–4 avant la ligne finale `[ "$fail" -eq 0 ]…`)
+
+- Modify: `eval.sh` (insérer les cas 3–4 avant la ligne finale
+  `[ "$fail" -eq 0 ]…`)
 
 **Interfaces:**
-- Consomme : SOUL + skill déployés dans `~/.hermes/` (recopiés par `setup.sh`), stack docker up, `MISTRAL_API_KEY` valide dans `.env`.
+
+- Consomme : SOUL + skill déployés dans `~/.hermes/` (recopiés par `setup.sh`),
+  stack docker up, `MISTRAL_API_KEY` valide dans `.env`.
 - Produit : `./eval.sh` à 4 cas, sortie `EVAL OK`.
 
 - [ ] **Step 1 : ajouter les cas 3 et 4**
 
-Dans `eval.sh`, insérer avant la ligne `[ "$fail" -eq 0 ] && echo "EVAL OK" || { echo "EVAL ÉCHOUÉE"; exit 1; }` :
+Dans `eval.sh`, insérer avant la ligne
+`[ "$fail" -eq 0 ] && echo "EVAL OK" || { echo "EVAL ÉCHOUÉE"; exit 1; }` :
 
 ```bash
 # Cas 3 : devis sans volume -> doit demander le volume, zéro chiffrage émis
@@ -547,7 +641,8 @@ echo "$out" | grep -qE '[0-9]+([.,][0-9]{2})? ?€' && { echo "FAIL cas4: prix i
 ./setup.sh && docker compose restart hermes
 ```
 
-Attendu : checklist setup verte ; restart sans erreur. (Jamais `docker compose up -d` seul — garde-fou clés.)
+Attendu : checklist setup verte ; restart sans erreur. (Jamais
+`docker compose up -d` seul — garde-fou clés.)
 
 - [ ] **Step 3 : vérifier le déploiement du skill**
 
@@ -563,7 +658,12 @@ Attendu : `SKILL.md` listé ; `1`.
 ./eval.sh
 ```
 
-Attendu : `EVAL OK` (4 cas). En cas de FAIL cas 3/4 : lire la sortie du modèle, ajuster la formulation du SKILL/SOUL (pas les greps, sauf faux positif manifeste — ex. le modèle cite « 45 m³ » : ne matche pas la regex prix, c'est prévu), redéployer (`cp hermes/SOUL.md ~/.hermes/SOUL.md ; cp -r hermes/skills/devis-piscine ~/.hermes/skills/ ; docker compose restart hermes`), relancer.
+Attendu : `EVAL OK` (4 cas). En cas de FAIL cas 3/4 : lire la sortie du modèle,
+ajuster la formulation du SKILL/SOUL (pas les greps, sauf faux positif manifeste
+— ex. le modèle cite « 45 m³ » : ne matche pas la regex prix, c'est prévu),
+redéployer
+(`cp hermes/SOUL.md ~/.hermes/SOUL.md ; cp -r hermes/skills/devis-piscine ~/.hermes/skills/ ; docker compose restart hermes`),
+relancer.
 
 - [ ] **Step 5 : commit**
 
@@ -582,11 +682,14 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 6 : documentation (README, CLAUDE.md) + rappel upload
 
 **Files:**
+
 - Modify: `README.md` (section démo/usage existante)
 - Modify: `CLAUDE.md` (description dépôt + commandes + architecture)
 
 **Interfaces:**
-- Consomme : noms définitifs — `tools/gen-abaque.ts`, `data/abaque-filtration.md`, skill `devis-piscine`.
+
+- Consomme : noms définitifs — `tools/gen-abaque.ts`,
+  `data/abaque-filtration.md`, skill `devis-piscine`.
 
 - [ ] **Step 1 : README — sous-section démo devis**
 
@@ -602,11 +705,10 @@ dans la collection « Knowledge » d'Open WebUI.
 
 Requêtes de démo :
 
-- « Devis filtration pour une piscine 8 × 4 m, profondeur 1,2 à 1,8 m, client
-  M. Durand » → devis complet tranche 41–50 m³, MO et tuyauterie à compléter.
+- « Devis filtration pour une piscine 8 × 4 m, profondeur 1,2 à 1,8 m, client M.
+  Durand » → devis complet tranche 41–50 m³, MO et tuyauterie à compléter.
 - « Fais-moi un devis filtration » → l'agent demande le volume.
-- « Piscine à débordement de 120 m³ » → orientation étude atelier, zéro
-  chiffre.
+- « Piscine à débordement de 120 m³ » → orientation étude atelier, zéro chiffre.
 
 L'abaque est GÉNÉRÉ (`npx tsx tools/gen-abaque.ts > data/abaque-filtration.md`)
 depuis le moteur hydraulique du prototype Peep (dépôt frère `../Peep`), jamais
@@ -616,12 +718,18 @@ logique, éditer `PARAMS`/le moteur, régénérer, ré-uploader.
 
 - [ ] **Step 2 : CLAUDE.md — description et commandes**
 
-1. Dans « Ce qu'est ce dépôt », remplacer « rédaction de brouillons de mails (réponse client, relance devis, mail libre) » par « génération de devis d'installation de filtration (dimensionnement par abaque pré-calculé) et, en secondaire, brouillons de mails (réponse client, relance devis, mail libre) ».
+1. Dans « Ce qu'est ce dépôt », remplacer « rédaction de brouillons de mails
+   (réponse client, relance devis, mail libre) » par « génération de devis
+   d'installation de filtration (dimensionnement par abaque pré-calculé) et, en
+   secondaire, brouillons de mails (réponse client, relance devis, mail libre)
+   ».
 2. Dans « Commandes », ajouter après le bloc eval :
 
 ```markdown
 # Régénérer l'abaque de dimensionnement (one-shot, poste dev — moteur Peep
+
 # requis dans ../Peep ; jamais exécuté chez Maria)
+
 npx tsx tools/gen-abaque.ts > data/abaque-filtration.md
 ```
 
@@ -631,10 +739,10 @@ npx tsx tools/gen-abaque.ts > data/abaque-filtration.md
 5. **Le dimensionnement est pré-calculé, jamais calculé par le modèle.**
    `data/abaque-filtration.md` est généré par `tools/gen-abaque.ts` depuis le
    moteur hydraulique de `../Peep` (logique provisoire, à faire valider par
-   Maria — formule puissance pompe connue fausse, sélection par débit
-   catalogue à la place). Le modèle recopie une tranche, totaux compris.
-   Corriger la logique = éditer Peep/`PARAMS`, régénérer, ré-uploader dans
-   Knowledge — ni le skill ni SOUL ne bougent.
+   Maria — formule puissance pompe connue fausse, sélection par débit catalogue
+   à la place). Le modèle recopie une tranche, totaux compris. Corriger la
+   logique = éditer Peep/`PARAMS`, régénérer, ré-uploader dans Knowledge — ni le
+   skill ni SOUL ne bougent.
 ```
 
 - [ ] **Step 3 : commit**
@@ -648,4 +756,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 - [ ] **Step 4 : rappel manuel à l'utilisateur (pas un commit)**
 
-Signaler en fin d'exécution : uploader `data/abaque-filtration.md` + ré-uploader `data/catalogue.md` dans la collection « Knowledge » d'Open WebUI (UI manuelle), sinon le RAG ne fournit pas l'abaque et l'agent sortira des squelettes `[À COMPLÉTER]`.
+Signaler en fin d'exécution : uploader `data/abaque-filtration.md` + ré-uploader
+`data/catalogue.md` dans la collection « Knowledge » d'Open WebUI (UI manuelle),
+sinon le RAG ne fournit pas l'abaque et l'agent sortira des squelettes
+`[À COMPLÉTER]`.

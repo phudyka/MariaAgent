@@ -181,10 +181,11 @@ Requêtes de démo :
 - _« Piscine à débordement de 120 m³ »_ → orientation étude atelier, zéro
   chiffre.
 
-L'abaque est GÉNÉRÉ (`npx -y tsx tools/gen-abaque.ts > data/abaque-filtration.md`)
-depuis le moteur hydraulique du prototype Peep (dépôt frère `../Peep`), jamais
-exécuté en production. Dimensionnement provisoire : quand Maria corrige la
-logique, éditer `PARAMS`/le moteur, régénérer, ré-uploader.
+L'abaque est GÉNÉRÉ
+(`npx -y tsx tools/gen-abaque.ts > data/abaque-filtration.md`) depuis le moteur
+hydraulique du prototype Peep (dépôt frère `../Peep`), jamais exécuté en
+production. Dimensionnement provisoire : quand Maria corrige la logique, éditer
+`PARAMS`/le moteur, régénérer, ré-uploader.
 
 ### Démo mails
 
