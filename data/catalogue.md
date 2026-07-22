@@ -8,6 +8,8 @@ fournisseur indiqué.
 
 ## Filtration — pompes & filtres
 
+- POMP-075 | Pompe filtration 0,75 CV | Hayward | 290.00 | 20 % | 3 | En stock |
+  mono 230V, 12 m³/h
 - POMP-100 | Pompe filtration 1,0 CV | Hayward | 340.00 | 20 % | 4 | En stock |
   mono 230V, 15 m³/h
 - POMP-150 | Pompe filtration 1,5 CV | Hayward | 420.00 | 20 % | 6 | En stock |
@@ -16,6 +18,8 @@ fournisseur indiqué.
   tri 400V, 28 m³/h
 - POMP-VS | Pompe à vitesse variable | Pentair | 980.00 | 20 % | 3 | En stock |
   éco, 25 m³/h, pilotable
+- FILT-400 | Filtre à sable Ø400 | Hayward | 240.00 | 20 % | 4 | En stock | 6
+  m³/h, vanne 6 voies
 - FILT-500 | Filtre à sable Ø500 | Hayward | 310.00 | 20 % | 3 | En stock | 10
   m³/h, vanne 6 voies
 - FILT-600 | Filtre à sable Ø600 | Hayward | 430.00 | 20 % | 2 | En stock | 14
@@ -26,6 +30,14 @@ fournisseur indiqué.
   rechange multivoies
 - SABL-25 | Sable filtrant 25 kg | — | 18.00 | 20 % | 30 | En stock |
   granulométrie 0,4-0,8 mm
+- VANN-2V | Vanne d'arrêt 2 voies Ø50 | AstralPool | 48.00 | 20 % | 12 | En
+  stock | robinetterie circuit
+- UNION-50 | Raccord union Ø50 à coller | — | 9.00 | 20 % | 60 | En stock | à
+  coller, rechange circuit
+- MANO-FILT | Manomètre de filtre | — | 24.00 | 20 % | 15 | En stock | contrôle
+  pression
+- PREF-BASK | Panier de préfiltre pompe | Hayward | 19.00 | 20 % | 20 | En stock
+  | rechange préfiltre
 
 ## Traitement de l'eau
 
