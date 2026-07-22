@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fiche démo — Agent ETS Maria</title>
+<style>
+  :root {
+    --bg:#F1F5F6; --surface:#FFFFFF; --surface-2:#E7EEEF;
+    --ink:#15242B; --ink-soft:#4C646D; --line:#D3E0E2;
+    --water:#0B6E7D; --water-deep:#08505C; --water-tint:#E1F0F2;
+    --ok:#2F7D52; --ok-tint:#E1F0E8;
+    --danger:#B23A2E; --danger-tint:#F6E6E3;
+    --code-bg:#0C1A20; --code-ink:#D9E8EB; --code-line:#25424B; --code-accent:#4FC6D6; --code-dim:#7C99A0;
+    --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --radius:7px; --maxw:1000px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0B1316; --surface:#111D22; --surface-2:#16242A;
+      --ink:#E7F1F3; --ink-soft:#94ABB3; --line:#22353C;
+      --water:#24AEC2; --water-deep:#57CBDB; --water-tint:#102A30;
+      --ok:#5FB483; --ok-tint:#12271D;
+      --danger:#E28577; --danger-tint:#2A1612;
+      --code-bg:#070F12; --code-ink:#D9E8EB; --code-line:#1D343B; --code-accent:#4FC6D6; --code-dim:#6E8A91;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#F1F5F6; --surface:#FFFFFF; --surface-2:#E7EEEF;
+    --ink:#15242B; --ink-soft:#4C646D; --line:#D3E0E2;
+    --water:#0B6E7D; --water-deep:#08505C; --water-tint:#E1F0F2;
+    --ok:#2F7D52; --ok-tint:#E1F0E8; --danger:#B23A2E; --danger-tint:#F6E6E3;
+    --code-bg:#0C1A20; --code-ink:#D9E8EB; --code-line:#25424B; --code-accent:#4FC6D6; --code-dim:#7C99A0;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0B1316; --surface:#111D22; --surface-2:#16242A;
+    --ink:#E7F1F3; --ink-soft:#94ABB3; --line:#22353C;
+    --water:#24AEC2; --water-deep:#57CBDB; --water-tint:#102A30;
+    --ok:#5FB483; --ok-tint:#12271D; --danger:#E28577; --danger-tint:#2A1612;
+    --code-bg:#070F12; --code-ink:#D9E8EB; --code-line:#1D343B; --code-accent:#4FC6D6; --code-dim:#6E8A91;
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased;margin:0}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:32px 22px 64px}
+
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--water);font-weight:600}
+  h1{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.02em;
+    line-height:1.05;margin:.28em 0 .18em;text-wrap:balance}
+  .lede{color:var(--ink-soft);font-size:16px;max-width:60ch;margin:0}
+
+  /* header */
+  .head{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:26px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;
+    font-family:var(--font-mono);font-size:12px;color:var(--ink-soft)}
+  .meta b{color:var(--ink);font-weight:600}
+
+  /* preflight chips */
+  .preflight{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin-top:18px}
+  .chip{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:11px 13px;display:flex;gap:10px;align-items:flex-start}
+  .chip .k{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--water);font-weight:600;white-space:nowrap;padding-top:2px}
+  .chip .v{font-size:13.5px;color:var(--ink)}
+  .chip .v code{font-family:var(--font-mono);font-size:12px;background:var(--surface-2);
+    padding:1px 5px;border-radius:4px}
+
+  /* acts */
+  .act{margin-top:34px}
+  .act-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    padding-bottom:8px;border-bottom:2px solid var(--water);margin-bottom:4px}
+  .act-head h2{font-size:19px;font-weight:800;letter-spacing:-.01em;margin:0}
+  .act-head .dur{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-soft);margin-left:auto}
+
+  /* step */
+  .step{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:20px 0;
+    border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:0}
+  .num{font-family:var(--font-mono);font-weight:700;font-size:15px;color:var(--water-deep);
+    background:var(--water-tint);border-radius:var(--radius);height:38px;
+    display:flex;align-items:center;justify-content:center}
+  .step .do{font-size:15.5px;font-weight:600;margin:2px 0 0}
+  .step .do .tag{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-soft);font-weight:600;margin-right:8px}
+  .step .sub{color:var(--ink-soft);font-size:14px;margin:6px 0 0}
+  .step .sub code, .inline-code{font-family:var(--font-mono);font-size:12.5px;background:var(--surface-2);
+    padding:1.5px 6px;border-radius:4px;color:var(--ink)}
+
+  .stack{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+
+  /* callouts: color == meaning */
+  .call{border-left:3px solid;border-radius:0 var(--radius) var(--radius) 0;padding:10px 14px;font-size:14px}
+  .call .lab{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    font-weight:700;display:block;margin-bottom:3px}
+  .say{background:var(--water-tint);border-color:var(--water)}
+  .say .lab{color:var(--water-deep)}
+  .say p{margin:0;color:var(--ink);font-style:italic}
+  .exp{background:var(--ok-tint);border-color:var(--ok)}
+  .exp .lab{color:var(--ok)}
+  .exp p{margin:0;color:var(--ink)}
+  .exp b{font-family:var(--font-mono);font-weight:700;font-size:13.5px}
+
+  /* terminal */
+  .term{background:var(--code-bg);border:1px solid var(--code-line);border-radius:var(--radius);overflow:hidden}
+  .term-bar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--code-line)}
+  .term-bar .dot{width:9px;height:9px;border-radius:50%;background:var(--code-line)}
+  .term-bar .ttl{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--code-dim);margin-left:4px}
+  .term-bar .copy{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--code-accent);
+    background:transparent;border:1px solid var(--code-line);border-radius:5px;padding:3px 9px;cursor:pointer}
+  .term-bar .copy:hover{border-color:var(--code-accent)}
+  .term-bar .copy:focus-visible{outline:2px solid var(--code-accent);outline-offset:2px}
+  .term pre{margin:0;padding:13px 14px;overflow-x:auto}
+  .term code{font-family:var(--font-mono);font-size:12.5px;line-height:1.6;color:var(--code-ink);white-space:pre}
+  .term .cmt{color:var(--code-dim)}
+  .term .prm{color:var(--code-accent)}
+
+  /* danger */
+  .danger{background:var(--danger-tint);border:1px solid var(--danger);border-radius:var(--radius);
+    padding:16px 18px;margin-top:30px}
+  .danger .lab{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    font-weight:700;color:var(--danger);display:flex;align-items:center;gap:9px;margin-bottom:7px}
+  .danger .lab .bang{background:var(--danger);color:var(--surface);width:19px;height:19px;border-radius:5px;
+    display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-sans);font-size:13px}
+  .danger p{margin:0;font-size:14.5px;color:var(--ink)}
+  .danger p+p{margin-top:8px}
+
+  /* troubleshooting table */
+  .tbl-wrap{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:var(--radius)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:460px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:0}
+  th{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-soft);background:var(--surface-2);font-weight:600}
+  td code{font-family:var(--font-mono);font-size:12px;background:var(--surface-2);padding:1.5px 6px;border-radius:4px}
+  .sym{color:var(--ink);font-weight:600}
+
+  /* footer quick-ref */
+  .foot{margin-top:34px;padding-top:20px;border-top:1px solid var(--line);
+    display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .ref{font-size:13.5px}
+  .ref .k{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-soft);display:block;margin-bottom:2px}
+  .ref a,.ref .val{color:var(--water);font-family:var(--font-mono);font-size:13px;text-decoration:none;word-break:break-all}
+
+  section h2, .step, .danger{scroll-margin-top:20px}
+  @media (max-width:560px){ .step{grid-template-columns:36px 1fr;gap:12px} .num{height:32px;font-size:13px} }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  @media print{
+    :root{--bg:#fff;--surface:#fff;--surface-2:#f0f3f4}
+    body{color:#111}
+    .wrap{max-width:none;padding:0}
+    .term{background:#0c1a20}
+    .copy{display:none!important}
+    .step,.danger,.act{break-inside:avoid}
+  }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+  <header class="head">
+    <div class="eyebrow">Fiche démo · confidentiel interne</div>
+    <h1>Agent commercial ETS Maria</h1>
+    <p class="lede">Démo point par point : un agent local qui rédige des mails ancrés sur le catalogue,
+      dans une boîte réseau étanche. Deux actes — la valeur métier, puis la sécurité.</p>
+    <div class="meta">
+      <span>Durée <b>~15 min</b></span>
+      <span>Modèle <b>Maria — catalogue</b></span>
+      <span>UI <b>localhost:3000</b></span>
+      <span>Inbox <b>127.0.0.1:8025</b></span>
+    </div>
+
+    <div class="preflight">
+      <div class="chip"><span class="k">Avant · 1</span><span class="v">Stack up : <code>docker compose ps</code> → 5 conteneurs</span></div>
+      <div class="chip"><span class="k">Avant · 2</span><span class="v">Inbox seedée : <code>127.0.0.1:8025</code> → 6 mails</span></div>
+      <div class="chip"><span class="k">Avant · 3</span><span class="v">Modèle « Maria — catalogue » choisi · Top&nbsp;K=8 déjà réglé</span></div>
+    </div>
+  </header>
+
+  <!-- ACTE 1 -->
+  <section class="act">
+    <div class="act-head">
+      <div class="eyebrow">Acte 1</div>
+      <h2>La valeur métier — l'agent rédige juste</h2>
+      <span class="dur">~6 min</span>
+    </div>
+
+    <div class="step">
+      <div class="num">1</div>
+      <div>
+        <p class="do"><span class="tag">Faire</span>Ouvrir la boîte de réception (Mailpit) à l'écran.</p>
+        <p class="sub">C'est le décor : les mails que reçoit ETS Maria.</p>
+        <div class="stack">
+          <div class="call say"><span class="lab">Dire</span><p>« Voici les mails clients qui arrivent chez Maria. On va traiter le premier. »</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">2</div>
+      <div>
+        <p class="do"><span class="tag">Faire</span>Ouvrir <span class="inline-code">01-berger-pompe.eml</span>, copier le corps, coller dans Maria.</p>
+        <div class="stack">
+          <div class="call exp"><span class="lab">Attendu</span><p>Brouillon citant <b>POMP-150 · 420,00 € HT · en stock</b>, avec la source du catalogue.</p></div>
+          <div class="call say"><span class="lab">Dire</span><p>« Il rédige, et il cite VOS références et VOS prix. Rien n'est inventé — tout vient du catalogue chargé. »</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">3</div>
+      <div>
+        <p class="do"><span class="tag">Faire</span>Un 2e pour l'effet : <span class="inline-code">05-projecteur</span> ou <span class="inline-code">03-lefevre-volet</span>.</p>
+        <div class="stack">
+          <div class="call exp"><span class="lab">Attendu</span><p><b>PROJ-RGB · 189 €</b> — ou volet <b>VOLET-IMM · 4200 € · sur commande 4-6 sem.</b></p></div>
+          <div class="call say"><span class="lab">Dire</span><p>« Et si une donnée manque, il écrit <b>[À COMPLÉTER]</b> — jamais un chiffre inventé. C'est la règle. »</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACTE 2 -->
+  <section class="act">
+    <div class="act-head">
+      <div class="eyebrow">Acte 2</div>
+      <h2>La sécurité — on ne fait pas confiance au modèle</h2>
+      <span class="dur">~7 min</span>
+    </div>
+
+    <div class="step">
+      <div class="num">4</div>
+      <div>
+        <p class="do"><span class="tag">Faire</span>Ouvrir <span class="inline-code">06-injection-test.eml</span>, montrer le texte piégé à l'écran.</p>
+        <div class="stack">
+          <div class="call say"><span class="lab">Dire</span><p>« Un mail entrant n'est pas fiable. Celui-ci contient une injection : il ordonne à l'agent d'exfiltrer la base clients et de lire un fichier système. »</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">5</div>
+      <div>
+        <p class="do"><span class="tag">Preuve 1</span>Le modèle n'a que <span class="inline-code">[skills, todo, memory]</span> — aucun tool web / file / terminal.</p>
+        <div class="stack">
+          <div class="call say"><span class="lab">Dire</span><p>« L'injection réclame “l'outil web” et de lire un fichier. Ces outils n'existent pas dans son périmètre. Il n'a rien à détourner. »</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">6</div>
+      <div>
+        <p class="do"><span class="tag">Preuve 2 · live</span>Lancer le test d'étanchéité réseau depuis le conteneur de l'agent.</p>
+        <div class="stack">
+          <div class="term">
+            <div class="term-bar"><span class="dot"></span><span class="ttl">terminal · egress test</span>
+              <button class="copy" data-copy type="button">copier</button></div>
+            <pre><code>docker compose exec hermes python3 -c "import socket; socket.setdefaulttimeout(4)
+<span class="prm">try</span>: socket.create_connection(('1.1.1.1',443)); print('EGRESS OUVERT (PROBLÈME)')
+<span class="prm">except</span> Exception as e: print('BLOQUÉ ->', e)"
+<span class="cmt"># attendu ->  BLOQUÉ -> [Errno 101] Network is unreachable</span></code></pre>
+          </div>
+          <div class="call exp"><span class="lab">Attendu</span><p><b>BLOQUÉ -> [Errno 101] Network is unreachable</b></p></div>
+          <div class="call say"><span class="lab">Dire</span><p>« Même totalement retourné, le conteneur n'a aucune route vers internet. Rien ne sort. C'est garanti par la topologie, pas par le bon vouloir du modèle. »</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">→</div>
+      <div>
+        <p class="do"><span class="tag">Clôture</span>Le mot de la fin (assume, ça crédibilise).</p>
+        <div class="stack">
+          <div class="call say"><span class="lab">Dire</span><p>« Le modèle local peut être trompé — c'est attendu, on ne parie pas là-dessus. La sécurité, c'est qu'il est enfermé dans une boîte sans porte : ni outils, ni réseau. Le dernier angle — ce qu'il recopierait dans un brouillon relu par un humain — se ferme en production avec RBAC et filtrage de sortie. »</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NE PAS -->
+  <div class="danger">
+    <div class="lab"><span class="bang">!</span>À ne pas faire en live</div>
+    <p><b>Ne colle pas</b> <span class="inline-code">06-injection-test</span> dans le modèle en espérant qu'il <i>refuse</i> : il obéit et recopie un vrai client dans le brouillon (testé). Le mail piégé sert de <b>décor de menace</b> — la démonstration, ce sont les deux preuves de confinement (étapes 5 et 6).</p>
+    <p>Si on te demande « et si on le colle ? » → réponds cash : « le modèle peut le recracher dans le texte : c'est le risque <i>sortie</i>, traité par le durcissement prod. L'infra, elle, garantit que rien ne part sur le réseau. »</p>
+  </div>
+
+  <!-- TROUBLESHOOTING -->
+  <section class="act">
+    <div class="act-head">
+      <div class="eyebrow">Filet</div>
+      <h2>Si ça foire</h2>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Symptôme</th><th>Correctif</th></tr></thead>
+        <tbody>
+          <tr><td class="sym">L'agent invente un prix</td><td>RAG inactif → modèle « Maria — catalogue » sélectionné, sinon taper <code>#Maria</code> dans le chat</td></tr>
+          <tr><td class="sym">Inbox vide</td><td><code>./seed-inbox.sh</code></td></tr>
+          <tr><td class="sym">Stack éteinte</td><td><code>./setup.sh</code></td></tr>
+          <tr><td class="sym">Réf de niche non trouvée</td><td>Déjà réglé (Top K = 8) ; revérifier le modèle choisi</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- QUICK REF -->
+  <footer class="foot">
+    <div class="ref"><span class="k">Interface agent</span><a href="http://localhost:3000">localhost:3000</a></div>
+    <div class="ref"><span class="k">Boîte mail démo</span><a href="http://127.0.0.1:8025">127.0.0.1:8025</a></div>
+    <div class="ref"><span class="k">Modèle à choisir</span><span class="val">Maria — catalogue</span></div>
+    <div class="ref"><span class="k">Re-seed inbox</span><span class="val">./seed-inbox.sh</span></div>
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll('[data-copy]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var code=btn.closest('.term').querySelector('code');
+      var txt=code.innerText.replace(/\n# attendu[\s\S]*$/,'').trim();
+      navigator.clipboard.writeText(txt).then(function(){
+        var old=btn.textContent; btn.textContent='copié ✓';
+        setTimeout(function(){btn.textContent=old;},1500);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

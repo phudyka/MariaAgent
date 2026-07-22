@@ -137,10 +137,11 @@ affichée en fin de script : modèle `maria-agent` (system prompt =
 `hermes/SOUL.md`), collection Knowledge « Maria » pointée sur `data/`, web
 search activé.
 
-> Vérification bring-up recommandée : confirmer l'absence de résolution DNS
-> sortante depuis `hermes`/`ollama` (`docker compose exec hermes nslookup
-> <domaine>` doit échouer) — canal résiduel indépendant du proxy HTTP,
-> détaillé dans
+> Vérification bring-up recommandée : confirmer l'absence de route sortante
+> depuis `hermes`/`ollama`. `nslookup` n'étant pas dans l'image, tester la
+> socket : `docker compose exec hermes python3 -c "import socket;
+> socket.create_connection(('1.1.1.1',443),timeout=5)"` doit échouer
+> (`OSError`) — canal résiduel indépendant du proxy HTTP, détaillé dans
 > [`docs/superpowers/specs/2026-07-20-securite-prod.md`](docs/superpowers/specs/2026-07-20-securite-prod.md).
 
 > GPU : le `docker-compose.yml` réserve un device nvidia pour `ollama`. Sur

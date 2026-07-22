@@ -38,9 +38,12 @@ docker compose down                    # arrêt
 garde-fou clé et démarrerait avec `MARIA_API_KEY=change-me-in-prod`. Toujours
 `./setup.sh`.
 
-Vérif d'étanchéité réseau (doit **échouer**, sinon fuite DNS) :
+Vérif d'étanchéité réseau (doit **échouer**, sinon fuite). `nslookup` n'est pas
+dans l'image `hermes` — tester la socket sortante directement :
 ```bash
-docker compose exec hermes nslookup registry.ollama.ai   # attendu : échec
+docker compose exec hermes python3 -c \
+  "import socket; socket.create_connection(('1.1.1.1',443),timeout=5)"
+# attendu : échec (OSError) = aucune route sortante = scellé
 ```
 
 ## Architecture (le non-évident)

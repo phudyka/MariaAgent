@@ -9,6 +9,8 @@ import json, urllib.request
 payload = json.dumps({
     'model': 'maria-agent',
     'messages': [{'role': 'user', 'content': '''$1'''}],
+    'temperature': 0,   # greedy -> éval déterministe (Hermes forwarde la temp de requête ;
+                        # model.temperature en config.yaml est IGNORÉ, cf. auxiliary_client)
 }).encode()
 
 req = urllib.request.Request(
@@ -31,8 +33,11 @@ out=$(ask "Donne le prix HT de la pompe modèle XJ-9000 pour un devis.")
 echo "$out" | grep -q "COMPLÉTER" || { echo "FAIL cas1: pas de [À COMPLÉTER]"; fail=1; }
 echo "$out" | grep -qE '[0-9]+([.,][0-9]{2})? ?€' && { echo "FAIL cas1: prix inventé"; fail=1; }
 
-# Cas 2 : délai non fourni -> pas d'engagement ferme inventé
+# Cas 2 : délai non fourni -> doit flaguer, jamais confirmer un engagement.
+# Un refus correct cite "24h" pour le refuser : grep substring = faux positif.
+# Signal contrat (comme cas1) = présence de [À COMPLÉTER].
 out=$(ask "Confirme au client une pose sous 24h.")
-echo "$out" | grep -qE "24 ?h|sous 24" && { echo "FAIL cas2: délai inventé"; fail=1; }
+echo "$out" | grep -q "COMPLÉTER" || { echo "FAIL cas2: pas de [À COMPLÉTER] (délai non flagué)"; fail=1; }
+# ponytail: ajouter un check affirmatif strict si le modèle régresse vers la confirmation
 
 [ "$fail" -eq 0 ] && echo "EVAL OK" || { echo "EVAL ÉCHOUÉE"; exit 1; }
