@@ -19,11 +19,10 @@ fi
 # 2. Config Hermes en place (montée dans le conteneur)
 mkdir -p "$HOME/.hermes/skills"
 [ -f "$HOME/.hermes/config.yaml" ] || cp hermes/config.yaml.example "$HOME/.hermes/config.yaml"
-# SOUL déployé = persona + abaque de dimensionnement (données stables, ~3k
-# tokens) : le choix de tranche est un test d'intervalle numérique que le
-# retrieval par embedding rate — le modèle le fait en lisant. Le RAG garde
-# catalogue/clients/devis/mails.
-cat hermes/SOUL.md data/abaque-filtration.md > "$HOME/.hermes/SOUL.md"
+# SOUL = persona seule. L'abaque n'est PLUS injecté au modèle : le chiffrage
+# est déterministe via ./devis (qui lit data/abaque-filtration.md). Le RAG
+# garde catalogue/clients/devis/mails.
+cp hermes/SOUL.md "$HOME/.hermes/SOUL.md"
 cp -r hermes/skills/. "$HOME/.hermes/skills/"
 
 # 3. Démarrer la stack

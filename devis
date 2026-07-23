@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+# devis — chiffrage déterministe d'un devis filtration depuis l'abaque.
+# Le LLM ne chiffre plus rien : il extrait dimensions/volume du mail client,
+# ce script produit le devis (source : data/abaque-filtration.md, générée par
+# tools/gen-abaque.ts depuis le moteur Peep — jamais exécuté ici).
+#
+# Usage :
+#   ./devis 45                          volume en m³
+#   ./devis 8 4 1.5                     longueur largeur profondeur (m)
+#   ./devis 8 4 1.2 1.8                 deux profondeurs -> moyenne
+#   ./devis --client "Mme Blanc" 8 4 1.5
+import math
+import re
+import sys
+from datetime import date
+from pathlib import Path
+
+ABAQUE = Path(__file__).resolve().parent / "data" / "abaque-filtration.md"
+CONTACT = "28 avenue de la Californie, 06200 Nice — 04 93 86 81 75 — contact@etsmaria.fr"
+
+
+def tranches():
+    """[(vmax, lignes, (ht, tva, ttc) | None, (Øasp, Øref) | None)] — ordre du fichier."""
+    out = []
+    for bloc in ABAQUE.read_text(encoding="utf-8").split("\n## Bassin ")[1:]:
+        bloc = bloc.split("\n## ")[0]  # coupe la section Notes techniques
+        m = re.match(r"(?:jusqu'à (\d+)|\d+ à (\d+)) m³", bloc)
+        if not m:
+            continue
+        vmax = int(m.group(1) or m.group(2))
+        lignes = re.findall(r"^- (\S+ \| .+ \| \d+ \| [\d.]+ \| [\d.]+)$", bloc, re.M)
+        totaux = re.search(r"matériel HT ([\d.]+) € ; TVA 20 % ([\d.]+) € ; TTC ([\d.]+) €", bloc)
+        diam = re.search(r"aspiration Ø(\d+) / refoulement Ø(\d+)", bloc)
+        out.append((vmax, lignes, totaux and totaux.groups(), diam and diam.groups()))
+    return out
+
+
+def escalade(volume):
+    print(
+        f"Bassin de {volume} m³ : hors chiffrage standard, étude atelier obligatoire.\n"
+        f"Aucun devis n'est émis sans cette étude de dimensionnement.\n"
+        f"Prochaine étape : contacter l'atelier — {CONTACT}"
+    )
+
+
+def devis(volume, dims, client):
+    tranche = next((t for t in tranches() if volume <= t[0]), None)
+    if tranche is None or not tranche[2]:  # > 100 m³ ou tranche « étude atelier »
+        return escalade(volume)
+    _, lignes, (ht, tva, ttc), diam = tranche
+    objet = f"Installation filtration — bassin {volume} m³"
+    if dims:
+        fr = lambda n: f"{n:g}".replace(".", ",")
+        objet += f" ({fr(dims[0])} × {fr(dims[1])} m, prof. moy. {fr(dims[2])} m)"
+    print(f"""DEVIS N° [À COMPLÉTER : numéro]
+Date : {date.today().strftime("%d/%m/%Y")}
+
+ETS Maria — pisciniste depuis 1937
+{CONTACT}
+
+Client : {client or "[À COMPLÉTER : client]"}
+Objet : {objet}
+
+Matériel :
+{chr(10).join(lignes)}
+
+Tuyauterie aspiration Ø{diam[0]} / refoulement Ø{diam[1]} :
+[À COMPLÉTER : métrage selon implantation]
+Main d'œuvre pose : [À COMPLÉTER : forfait pose]
+
+Total matériel HT : {ht} €
+TVA 20 % : {tva} €
+Total matériel TTC : {ttc} € (hors main d'œuvre et tuyauterie)
+
+Validité du devis : [À COMPLÉTER]
+Délai d'intervention : [À COMPLÉTER : à valider avec l'atelier]
+
+Cordialement,
+L'équipe ETS Maria
+28 avenue de la Californie, 06200 Nice
+04 93 86 81 75 — contact@etsmaria.fr""")
+
+
+def main(argv):
+    client, nums = None, []
+    args = list(argv)
+    while args:
+        a = args.pop(0)
+        if a == "--client":
+            client = args.pop(0) if args else sys.exit("--client attend un nom")
+        else:
+            try:
+                nums.append(float(a.replace(",", ".")))
+            except ValueError:
+                sys.exit(f"argument invalide : {a}")
+    if len(nums) == 1:
+        volume, dims = math.ceil(nums[0]), None
+    elif len(nums) in (3, 4):
+        prof = sum(nums[2:]) / len(nums[2:])
+        volume, dims = math.ceil(nums[0] * nums[1] * prof), (nums[0], nums[1], prof)
+    else:
+        sys.exit(
+            "Usage : ./devis VOLUME | ./devis LONGUEUR LARGEUR PROF [PROF2] "
+            "[--client NOM]\nEx.    : ./devis 45 | ./devis 8 4 1.5 --client 'Mme Blanc'"
+        )
+    if volume <= 0:
+        sys.exit("volume nul ou négatif")
+    devis(volume, dims, client)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

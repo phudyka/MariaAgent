@@ -7,17 +7,21 @@ Réponds en français dans ce dépôt (projet francophone, ETS Maria).
 
 ## Ce qu'est ce dépôt
 
-Démo d'**agent commercial sécurisé** : génération de devis d'installation de
-filtration (dimensionnement par abaque pré-calculé) et, en secondaire,
-brouillons de mails (réponse client, relance devis, mail libre) pour ETS Maria
-(pisciniste). Interface/RAG/orchestration en local via Docker ; **inférence via
+Démo d'**agent commercial sécurisé** pour ETS Maria (pisciniste). Le devis de
+filtration est chiffré par un **script déterministe** (`./devis`, lit l'abaque
+pré-calculé) — le LLM ne chiffre jamais : il fait l'entrée/sortie en langage
+naturel (extraire volume/dimensions d'un mail client, renvoyer la commande
+`./devis`, recopier verbatim un devis généré dans un brouillon) et, en
+secondaire, les brouillons de mails (réponse client, relance devis, mail
+libre). Interface/RAG/orchestration en local via Docker ; **inférence via
 l'API Mistral** (free tier, `mistral-small-latest` 24B Apache 2.0) — modèle
 choisi pour être exactement ce qu'un Mac mini (M4 Pro 48 Go, cible d'achat) fera
 tourner en local via Ollama ; tester la cible 24 Go = `open-mistral-nemo` (12B),
 bascule 1 ligne dans `~/.hermes/config.yaml`. `api.mistral.ai` est le seul
 domaine d'inférence de l'allowlist. Mode 100 % local v1 : profil compose `local`
-(ollama). Ce n'est pas du code applicatif : c'est de la **configuration
-d'infrastructure** (compose, proxy, persona, données mock). Le « produit » est
+(ollama). Ce n'est pas du code applicatif — c'est de la **configuration
+d'infrastructure** (compose, proxy, persona, données mock) plus un unique
+script de chiffrage (`./devis`). Le « produit » est
 la topologie sécurisée + le persona, pas un service qu'on développe. Free tier
 Mistral = requêtes utilisables pour l'entraînement : données de démo seulement,
 jamais de vrais mails clients.
@@ -37,15 +41,20 @@ docker build -t hermes-agent:local ~/.local/opt/hermes-agent
 # MISTRAL_API_KEY), up, checklist. Plus aucun pull de modèle par défaut.
 ./setup.sh
 
-# Éval anti-invention (4 cas : prix absent, délai non inventé, devis sans
-# volume -> question, devis sans abaque -> zéro réf/prix de mémoire)
+# Devis déterministe (chiffrage HORS LLM) : volume direct ou dimensions
+./devis 45
+./devis 8 4 1.5 --client "Mme Blanc"
+
+# Éval : partie A = grille déterministe ./devis (tranches, escalades, sans
+# stack) ; partie B = anti-invention du modèle seul (prix absent, délai non
+# inventé, devis sans volume -> question, volume fourni -> commande ./devis
+# sans aucune réf/prix, >100 m³ -> atelier)
 ./eval.sh
 
 # Régénérer l'abaque de dimensionnement (one-shot, poste dev — moteur Peep
-# requis dans ../Peep ; jamais exécuté chez Maria), puis redéployer le SOUL
-# (setup.sh concatène SOUL + abaque) et recharger hermes
+# requis dans ../Peep ; jamais exécuté chez Maria). ./devis lit le nouveau
+# fichier directement — rien à redéployer.
 npx -y tsx tools/gen-abaque.ts > data/abaque-filtration.md
-./setup.sh && docker compose restart hermes
 
 docker compose logs -f hermes          # logs d'un service
 docker compose down                    # arrêt
@@ -116,17 +125,18 @@ Points qui demandent de lire plusieurs fichiers pour être compris :
    comportement anti-invention du modèle _seul_ (doit produire `[À COMPLÉTER]`,
    ne pas inventer prix/délai), pas la qualité du RAG.
 
-5. **Le dimensionnement est pré-calculé, jamais calculé par le modèle.**
-   `data/abaque-filtration.md` est généré par `tools/gen-abaque.ts` depuis le
-   moteur hydraulique de `../Peep` (logique provisoire, à faire valider par
-   Maria — formule puissance pompe connue fausse, sélection par débit catalogue
-   à la place). Le modèle recopie une tranche, totaux compris. **L'abaque
-   voyage dans le SOUL, pas dans le RAG** : `setup.sh` concatène
-   `hermes/SOUL.md` + `data/abaque-filtration.md` vers `~/.hermes/SOUL.md` —
-   choisir une tranche est un test d'intervalle numérique que le retrieval par
-   embedding (all-MiniLM, anglais) rate systématiquement. Corriger la logique =
-   éditer Peep/`PARAMS`, régénérer, relancer `./setup.sh` + `docker compose
-   restart hermes`.
+5. **Le chiffrage ne passe jamais par le modèle.** `./devis` (Python stdlib,
+   racine du dépôt) parse `data/abaque-filtration.md` — généré par
+   `tools/gen-abaque.ts` depuis le moteur hydraulique de `../Peep` (logique
+   provisoire, à faire valider par Maria — formule puissance pompe connue
+   fausse, sélection par débit catalogue à la place) — et imprime le devis
+   complet : sélection de tranche, lignes, totaux, escalade atelier (tranches
+   81+ et >100 m³). **L'abaque n'est ni dans le SOUL ni dans le RAG** : le
+   SOUL interdit au modèle toute ligne matériel/référence/prix/total ; son
+   rôle devis se limite à extraire volume/dimensions et renvoyer la commande
+   `./devis`, ou recopier verbatim un devis déjà généré. Corriger la logique =
+   éditer Peep/`PARAMS`, régénérer l'abaque — `./devis` lit le fichier à
+   chaque exécution, rien à redéployer.
 
 6. **Les SKILL.md ne sont pas injectés au modèle** avec le toolset `[]` :
    Hermes n'injecte qu'un index nom+description, le contenu se charge via le
@@ -143,8 +153,8 @@ Points qui demandent de lire plusieurs fichiers pour être compris :
    (multilingue, seul du cache HF à ~470 Mo — formats onnx/openvino/.bin
    purgés), `top_k_reranker` 5. Posés via l'API/DB le 2026-07-22 ; l'UI Admin >
    Settings > Documents les affiche. La collection ne contient **pas**
-   l'abaque (SOUL seul, cf. point 5) : ses chunks saturés de réfs évincent
-   catalogue.md du top-k reranké.
+   l'abaque (lu par `./devis`, cf. point 5) : ses chunks saturés de réfs
+   évinceraient catalogue.md du top-k reranké.
 
 ## Invariants de sécurité — ne pas casser
 

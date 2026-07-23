@@ -168,26 +168,31 @@ collection Knowledge « Maria » pointée sur `data/`, web search activé.
 
 ### Démo devis filtration (tâche principale)
 
-L'agent produit un devis d'installation complète (pompe + filtre + pièces)
-depuis l'abaque de dimensionnement. L'abaque est livré au modèle par le SOUL
-(`setup.sh` concatène persona + abaque dans `~/.hermes/SOUL.md`) — aucun
-upload nécessaire pour le dimensionnement. Le RAG (collection « Knowledge »)
-sert le reste : `data/catalogue.md` (ré-upload après modification), fiches
-clients, devis, mails.
+Le chiffrage est 100 % déterministe : la commande `./devis` (script Python
+sans dépendance) lit `data/abaque-filtration.md` et produit le devis complet
+(lignes, totaux, `[À COMPLÉTER]` pour MO/tuyauterie). **Le modèle ne chiffre
+jamais** : il extrait volume/dimensions du mail client, calcule le volume et
+renvoie la commande à lancer ; un devis généré se recopie verbatim dans un
+brouillon de mail. Le RAG (collection « Knowledge ») sert le reste :
+`data/catalogue.md` (ré-upload après modification), fiches clients, devis,
+mails.
 
-Requêtes de démo :
+Démo :
 
-- _« Devis filtration pour une piscine 8 × 4 m, profondeur 1,2 à 1,8 m, client
-  M. Durand »_ → devis complet tranche 41–50 m³, MO et tuyauterie à compléter.
+- `./devis 8 4 1.5 --client "M. Durand"` → devis complet tranche 41–50 m³,
+  MO et tuyauterie à compléter.
+- Coller un mail « piscine 8 mètres sur 4, environ 1m50 de fond » dans l'agent
+  → « Volume : 48 m³. Générer le devis : ./devis 8 4 1,5 », zéro référence,
+  zéro prix.
 - _« Fais-moi un devis filtration »_ → l'agent demande le volume.
 - _« Piscine à débordement de 120 m³ »_ → orientation étude atelier, zéro
-  chiffre.
+  chiffre (idem `./devis 120` : étude atelier).
 
 L'abaque est GÉNÉRÉ
 (`npx -y tsx tools/gen-abaque.ts > data/abaque-filtration.md`) depuis le moteur
 hydraulique du prototype Peep (dépôt frère `../Peep`), jamais exécuté en
 production. Dimensionnement provisoire : quand Maria corrige la logique, éditer
-`PARAMS`/le moteur, régénérer, ré-uploader.
+`PARAMS`/le moteur, régénérer — `./devis` lit le nouveau fichier directement.
 
 ### Démo mails
 

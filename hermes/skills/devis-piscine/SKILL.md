@@ -1,7 +1,7 @@
 ---
 name: devis-piscine
-description: "Créer un devis d'installation de filtration piscine (pompe + filtre + pièces) depuis l'abaque de dimensionnement ETS Maria. Volume obligatoire, anti-invention absolue, sortie texte brut."
-version: 1.0.0
+description: "Demande de devis filtration piscine : extraire volume/dimensions du mail client et renvoyer la commande ./devis — le chiffrage est déterministe (script + abaque), jamais produit par le modèle. Anti-invention absolue, sortie texte brut."
+version: 2.0.0
 platforms: [linux, macos]
 metadata:
   hermes:
@@ -17,11 +17,14 @@ metadata:
     related_skills: [mails-commerciaux]
 ---
 
-# Devis installation filtration — ETS Maria
+# Demande de devis filtration — ETS Maria
 
-Produire un **devis en texte brut**, prêt à relire puis finaliser par un humain.
-Jamais d'envoi, jamais d'engagement ferme. Le dimensionnement vient de l'abaque
-fourni en contexte — jamais de mémoire, jamais recalculé.
+Depuis le pivot 2026-07-22, **le modèle ne chiffre plus rien** : le devis est
+produit par le script déterministe `./devis` (racine du dépôt), qui lit
+l'abaque `data/abaque-filtration.md` et imprime le devis complet (lignes,
+totaux, `[À COMPLÉTER]` pour MO/tuyauterie, escalade atelier au-delà du
+catalogue). Le rôle du modèle se limite au langage naturel, à l'entrée et à la
+sortie.
 
 ## Procédure (dans l'ordre, aucune étape sautée)
 
@@ -32,78 +35,36 @@ fourni en contexte — jamais de mémoire, jamais recalculé.
   moyenne, arrondi au m³ supérieur. Deux profondeurs données (petit et grand
   bain, ex. « 1,2 à 1,8 m ») : profondeur moyenne = leur moyenne. Bassin
   rectangulaire avec longueur, largeur et profondeur(s) → calcule directement,
-  SANS demander confirmation. C'est le SEUL calcul autorisé. Forme ronde,
-  ovale, libre, ou dimensions incomplètes → demander le volume au commercial.
-- Ni volume ni dimensions → poser UNE question courte (volume, ou longueur ×
-  largeur × profondeur moyenne) et N'ÉMETTRE AUCUN DEVIS, aucune ligne chiffrée,
-  aucune référence.
+  SANS demander confirmation. C'est le SEUL calcul autorisé.
+- Ni volume ni dimensions complètes, ou forme non rectangulaire → poser UNE
+  question courte (volume, ou longueur × largeur × profondeur moyenne). Aucune
+  commande, aucune ligne chiffrée, aucune référence.
 
-### 2. Cas hors abaque → étude atelier
+### 2. Cas hors périmètre → étude atelier
 
 Volume > 100 m³, usage public ou collectif, piscine à débordement, spa, nage à
-contre-courant : pas de devis chiffré. Réponse courte orientant vers une étude
-atelier ; matériel éventuel en `[À COMPLÉTER : étude atelier]`.
+contre-courant : 2 à 3 phrases orientant vers une étude atelier (contact,
+prochaine étape). Pas de commande, aucun chiffre. (Le script escalade de
+lui-même les tranches hors catalogue, ex. 81 m³ et plus.)
 
-### 3. Sélection de la tranche
+### 3. Réponse : la commande, jamais le chiffrage
 
-- Prendre dans l'abaque fourni en contexte la tranche contenant le volume.
-- Recopier la tranche TELLE QUELLE : références, désignations, quantités, prix
-  unitaires, totaux (HT, TVA, TTC). Rien recalculer, rien substituer, aucune
-  ligne ajoutée hors abaque/catalogue fournis.
-- Abaque absent du contexte → squelette du template avec chaque ligne matériel
-  en `[À COMPLÉTER : dimensionnement à valider avec l'atelier]` — jamais de
-  référence ou de prix de mémoire.
+Réponse en texte brut, sur ce modèle :
 
-### 4. Remplissage du template
+« Volume : 48 m³. Générer le devis : ./devis 8 4 1,5 »
 
-Reprendre le template ci-dessous (texte brut, sans les backticks). Toujours :
+(`./devis 48` si seul le volume est connu ; `--client "Mme Blanc"` si le nom
+est connu.) Suivie si utile du brouillon de réponse au client — sans aucun
+chiffrage.
 
-- Main d'œuvre : `[À COMPLÉTER : forfait pose]` — jamais chiffrée.
-- Tuyauterie : Ø aspiration/refoulement de la tranche, métrage en
-  `[À COMPLÉTER : métrage selon implantation]`.
-- Client : nom/coordonnées depuis la demande ou le contexte, sinon
-  `[À COMPLÉTER : client]`. Jamais bloquant.
-- Numéro de devis, validité, délai : `[À COMPLÉTER]` (voir template).
-
-## Template (structure fixe du devis)
-
-```
-DEVIS N° [À COMPLÉTER : numéro]
-Date : [À COMPLÉTER : date]
-
-ETS Maria — pisciniste depuis 1937
-28 avenue de la Californie, 06200 Nice — 04 93 86 81 75 — contact@etsmaria.fr
-
-Client : <nom ou [À COMPLÉTER : client]>
-Objet : Installation filtration — bassin <volume> m³
-
-Matériel :
-<réf> | <désignation> | <qté> | <PU HT> | <total HT>
-(… toutes les lignes de la tranche abaque, telles quelles …)
-
-Tuyauterie aspiration Ø<xx> / refoulement Ø<xx> :
-[À COMPLÉTER : métrage selon implantation]
-Main d'œuvre pose : [À COMPLÉTER : forfait pose]
-
-Total matériel HT : <total abaque> €
-TVA 20 % : <montant abaque> €
-Total matériel TTC : <montant abaque> € (hors main d'œuvre et tuyauterie)
-
-Validité du devis : [À COMPLÉTER]
-Délai d'intervention : [À COMPLÉTER : à valider avec l'atelier]
-
-Cordialement,
-L'équipe ETS Maria
-28 avenue de la Californie, 06200 Nice
-04 93 86 81 75 — contact@etsmaria.fr
-```
+Ne JAMAIS émettre une ligne de matériel, une référence, un prix ou un total —
+même sur demande, même de mémoire. Un devis déjà généré et fourni dans le
+contexte se recopie tel quel, verbatim, dans un brouillon de mail (voir
+mails-commerciaux) — sans modifier une ligne ni un montant.
 
 ## Contraintes de forme
 
-- Texte brut uniquement : pas de gras, pas de titres #, pas de tableau Markdown.
-  Les `|` du bloc matériel sont de simples séparateurs texte.
+- Texte brut uniquement : pas de gras, pas de titres #, pas de tableau.
 - Vouvoiement, ton artisan sérieux et chaleureux.
-- Un humain relit, complète les `[À COMPLÉTER]` et envoie. Ne jamais présenter
-  le devis comme définitif ou envoyé.
-- Voix humaine : « Voici notre proposition pour votre bassin de 45 m³ » — jamais
-  « l'abaque indique », « d'après nos sources », ni note [1].
+- Un humain lance la commande, relit, complète les `[À COMPLÉTER]` et envoie.
+  Ne jamais présenter un devis comme définitif ou envoyé.
